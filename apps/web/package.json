@@ -117,6 +117,7 @@
     "db:seed": "prisma db seed",
     "drafting:ingest-sources": "npx tsx scripts/ingest-drafting-sources.ts",
     "seed:test": "npx tsx scripts/seed-test-data.ts",
+    "seed:demo-listings": "npx tsx scripts/seed-demo-listings.ts",
     "test:e2e:checklist": "npx tsx scripts/test-e2e-checklist.ts",
     "seed:qa-blockers": "npx tsx scripts/seed-qa-blockers.ts",
     "seed:simulation": "npx tsx prisma/seed-simulation.ts",

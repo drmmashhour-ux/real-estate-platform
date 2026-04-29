@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BrowseListingFavoriteButton } from "@/components/listings/BrowseListingFavoriteButton";
 import { MapSearch } from "@/components/search/MapSearch";
 import { SmartMapInsightsPanel } from "@/components/search/SmartMapInsightsPanel";
 import { SearchFiltersProvider, useSearchEngineContext } from "@/components/search/SearchEngine";
@@ -16,34 +15,26 @@ import type { MapListing } from "@/components/map/MapListing";
 import { hasValidCoordinates } from "@/components/map/MapListing";
 import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 import { parseListingCodeFromSearchQuery } from "@/lib/listing-code-public";
-import { ListingsGridSkeleton } from "@/components/ui/SkeletonBlock";
-import { EmptyState } from "@/components/ui/EmptyState";
+import ListingCard from "@/components/listings/ListingCard";
+import GoogleListingsMap from "@/components/maps/GoogleListingsMap";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { QuebecLocationInput } from "@/components/search/QuebecLocationInput";
 import { LISTINGS_MAP_SEARCH_ID } from "@/lib/search/public-map-search-urls";
 import { scrollToMapSearchRegion } from "@/lib/ui/scroll-to-map-search";
 import { useGeocodedMapFocus } from "@/hooks/useGeocodedMapFocus";
 import { computeMapSearchStats } from "@/lib/search/map-search-analytics";
-import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
-import { getListingCardDeterministicInsights } from "@/lib/listings/listing-card-deterministic-insights";
-import { track } from "@/lib/tracking";
 import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
 import { recordListingsExplorerViewOnce } from "@/modules/conversion/funnel-metrics.service";
 import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
-import { recordListingCtaClick } from "@/modules/conversion/conversion-monitoring.service";
 import { cn } from "@/lib/utils";
+
+/** Phase 4: flip to restore interactive `MapSearch` alongside `GoogleListingsMap`. */
+const SHOW_LEGACY_MAP_SEARCH = false;
 
 const SEARCH_REASSURANCE_LINE =
   "Verified listings where marked · Clear prices · Secure platform";
 
-function isFeaturedListingActive(featuredUntil: string | null | undefined): boolean {
-  if (featuredUntil == null || featuredUntil === "") return false;
-  const t = new Date(featuredUntil).getTime();
-  return Number.isFinite(t) && t > Date.now();
-}
-
 const ACCENT = "#D4AF37";
-const CARD_BG = "#111";
 const PRICE_MAX_SLIDER = 3_000_000;
 const PRICE_STEP = 25_000;
 
@@ -122,6 +113,7 @@ function LecipmListingsExplorerInner() {
   const searchParams = useSearchParams();
   const mobileBrowseFiltersRef = useRef<HTMLDivElement>(null);
   const { reset, applyPatch } = useSearchEngineContext();
+  const resetFilters = reset;
 
   const [data, setData] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
@@ -364,8 +356,11 @@ function LecipmListingsExplorerInner() {
     (mqLg ? showListColumn : mobileShowList) ||
     settledEmptyResults;
 
+  /** Map column & Google placeholder (Phase 3+) only when we have rows to pin. */
+  const showMap = data.length > 0;
+
   const showMapPane =
-    showMapPaneByLayout && !fetchError && !settledEmptyResults && (loading || data.length > 0);
+    showMapPaneByLayout && !fetchError && !settledEmptyResults && showMap;
 
   const hasDesktopMapColumn = mqLg && Boolean(showMapPane) && showMapColumn;
 
@@ -581,297 +576,22 @@ function LecipmListingsExplorerInner() {
   );
 
   const listingsGrid = (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {data.map((row, cardIndex) => {
-        const img = row.coverImage || row.images[0] || null;
-        const price = `$${(row.priceCents / 100).toLocaleString("en-CA")}`;
-        const addr = [row.address, row.city].filter(Boolean).join(", ") || row.city;
-        const detailHref = listingPublicHref(row);
-        const insights = getListingCardDeterministicInsights({
-          priceCents: row.priceCents,
-          city: row.city,
-          bedrooms: row.bedrooms,
-          medianPriceDollars: medianForCards,
-        });
-        const microCta =
-          insights.some((line) => line.includes("Below median")) ? "Get this deal" : "Contact now";
-        const primaryOpportunityCta = conversionEngineFlags.conversionUpgradeV1 ? "Get this opportunity" : microCta;
-        const fireListingClick = () => {
-          track("listing_click", {
-            meta: { listingId: row.id, surface: "lecipm_grid", city: row.city },
-          });
-          if (conversionEngineFlags.conversionUpgradeV1) {
-            recordListingCtaClick({ listingId: row.id, surface: "lecipm_grid" });
-          }
-        };
-        return (
-          <article
-            key={row.id}
-            id={`lecipm-card-${row.id}`}
-            onMouseEnter={() => setSelectedId(row.id)}
-            onMouseLeave={() => setSelectedId(null)}
-            className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left shadow-[0_8px_30px_-12px_rgba(0,0,0,0.55)] transition-all duration-200 ease-out hover:scale-[1.015] hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.65)] ${
-              selectedId === row.id ? "border-[#D4AF37]/55 ring-1 ring-[#D4AF37]/25" : "border-[#D4AF37]/20"
-            }`}
-            style={{ backgroundColor: CARD_BG }}
-          >
-            <BrowseListingFavoriteButton
-              listingId={row.id}
-              kind={row.kind === "crm" ? "crm" : "fsbo"}
-              className="absolute right-2 top-2 z-10"
-            />
-            <Link
-              href={detailHref}
-              onClick={fireListingClick}
-              className="relative block aspect-[4/3] overflow-hidden bg-black outline-none ring-[#D4AF37]/30 focus-visible:ring-2"
-            >
-              {img ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={img}
-                  alt=""
-                  loading={cardIndex < 3 ? "eager" : "lazy"}
-                  decoding="async"
-                  fetchPriority={cardIndex === 0 ? "high" : undefined}
-                  className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.02]"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a1a1a] to-black text-sm text-white/40">
-                  No photo
-                </div>
-              )}
-              {img ? (
-                <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 top-[35%] bg-gradient-to-t from-black/80 via-black/30 to-transparent"
-                  aria-hidden
-                />
-              ) : null}
-              <div className="pointer-events-none absolute bottom-3 left-3 z-[2] flex max-w-[calc(100%-5rem)] flex-wrap items-center gap-1.5">
-                {row.verifiedListing ? (
-                  <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white ring-1 ring-white/20 backdrop-blur-sm">
-                    Verified
-                  </span>
-                ) : null}
-                {isFeaturedListingActive(row.featuredUntil) ? (
-                  <span className="rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8D589] backdrop-blur-sm">
-                    Top listing
-                  </span>
-                ) : null}
-              </div>
-            </Link>
-            <div className="flex flex-1 flex-col p-5">
-              <p className="text-2xl font-bold tracking-tight" style={{ color: ACCENT }}>
-                {price}
-              </p>
-              <p className="mt-2 line-clamp-2 text-sm font-medium text-white/90">{addr}</p>
-              <p className="mt-2 text-xs text-white/50">
-                {row.bedrooms != null ? `${row.bedrooms} bd` : "— bd"}
-                {" · "}
-                {row.bathrooms != null ? `${row.bathrooms} ba` : "— ba"}
-                {row.propertyType ? ` · ${row.propertyType}` : ""}
-              </p>
-              {insights.length ? (
-                <ul className="mt-3 space-y-1 text-[11px] leading-snug text-[#E8D589]/90">
-                  {insights.map((line) => (
-                    <li key={line} className="flex gap-1.5">
-                      <span className="text-[#D4AF37]" aria-hidden>
-                        ·
-                      </span>
-                      <span>{line}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                <Link
-                  href={detailHref}
-                  onClick={fireListingClick}
-                  className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-center text-sm font-bold text-[#E8D589] transition hover:bg-[#D4AF37]/20"
-                >
-                  View details
-                </Link>
-                <Link
-                  href={`${detailHref}#property-contact-cta`}
-                  onClick={() => {
-                    track("cta_click", {
-                      meta: { label: "contact_now", listingId: row.id, surface: "lecipm_grid" },
-                    });
-                    if (conversionEngineFlags.conversionUpgradeV1) {
-                      recordListingCtaClick({ listingId: row.id, surface: "lecipm_grid", label: "opportunity" });
-                    }
-                  }}
-                  className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl px-4 text-center text-sm font-bold text-black transition hover:brightness-110"
-                  style={{ backgroundColor: ACCENT }}
-                >
-                  {primaryOpportunityCta}
-                </Link>
-              </div>
-            </div>
-          </article>
-        );
-      })}
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {data.map((row, cardIndex) => (
+        <ListingCard
+          key={row.id}
+          row={row}
+          cardIndex={cardIndex}
+          selected={selectedId === row.id}
+          medianForCards={medianForCards}
+          conversionUpgradeV1={conversionEngineFlags.conversionUpgradeV1}
+          onHoverChange={setSelectedId}
+        />
+      ))}
     </div>
   );
 
-  const topFilterStrip = (
-    <section
-      className="border-b border-[#D4AF37]/15 bg-black/90"
-      aria-label="Listing filters"
-    >
-      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center">
-          <div className="flex flex-wrap gap-2">
-            <span className="w-full text-[10px] font-semibold uppercase tracking-wide text-white/40 lg:w-auto lg:pr-2">
-              Deal type
-            </span>
-            <button
-              type="button"
-              onClick={() => applyPatch({ type: "buy" })}
-              className={`min-h-[44px] rounded-2xl border px-4 text-sm font-semibold ${
-                !dealIsRent ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]" : "border-white/15 text-white/70"
-              }`}
-            >
-              Buy
-            </button>
-            <button
-              type="button"
-              onClick={() => applyPatch({ type: "rent" })}
-              className={`min-h-[44px] rounded-2xl border px-4 text-sm font-semibold ${
-                dealIsRent ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]" : "border-white/15 text-white/70"
-              }`}
-            >
-              Rent
-            </button>
-          </div>
-
-          <div className="min-w-0 flex-1 lg:max-w-xs">
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">City</label>
-            <input
-              type="text"
-              value={appliedFromUrl.location}
-              onChange={(e) => applyPatch({ location: e.target.value })}
-              placeholder="City or area"
-              className="min-h-[44px] w-full rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20"
-            />
-          </div>
-
-          <div className="grid w-full grid-cols-2 gap-2 sm:max-w-xs lg:w-64">
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">Min price</label>
-              <input
-                type="number"
-                min={0}
-                step={1000}
-                value={priceMinL || ""}
-                onChange={(e) => {
-                  const v = Math.max(0, parseInt(e.target.value, 10) || 0);
-                  setPriceMinL(v);
-                  queuePriceApply(v, priceMaxL >= PRICE_MAX_SLIDER ? 0 : priceMaxL);
-                }}
-                className="min-h-[44px] w-full rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-2 py-2 text-sm text-white"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">Max price</label>
-              <input
-                type="number"
-                min={0}
-                step={1000}
-                value={priceMaxL >= PRICE_MAX_SLIDER ? "" : priceMaxL}
-                placeholder="Any"
-                onChange={(e) => {
-                  const raw = e.target.value.trim();
-                  if (!raw) {
-                    setPriceMaxL(PRICE_MAX_SLIDER);
-                    queuePriceApply(priceMinL, 0);
-                    return;
-                  }
-                  const v = Math.max(0, parseInt(raw, 10) || 0);
-                  setPriceMaxL(v);
-                  queuePriceApply(priceMinL, v);
-                }}
-                className="min-h-[44px] w-full rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-2 py-2 text-sm text-white placeholder:text-white/35"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">Bedrooms</label>
-            <select
-              value={appliedFromUrl.bedrooms ?? ""}
-              onChange={(e) => {
-                const v = e.target.value;
-                applyPatch({ bedrooms: v === "" ? null : parseInt(v, 10) });
-              }}
-              className="min-h-[44px] w-full min-w-[8rem] rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-3 py-2 text-sm text-white lg:w-36"
-            >
-              <option value="">Any</option>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  {n}+
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="w-full lg:w-auto lg:min-w-[14rem]">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-white/40">Property type</p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {(
-                [
-                  ["", "Any"],
-                  ["HOUSE", "House"],
-                  ["CONDO", "Condo"],
-                  ["APARTMENT", "Apartment"],
-                ] as const
-              ).map(([val, label]) => (
-                <button
-                  key={val || "any-strip"}
-                  type="button"
-                  onClick={() => setPropertyType(val)}
-                  className={`flex min-h-[40px] w-full items-center justify-center rounded-xl border px-2 text-center text-xs font-medium sm:min-h-[44px] sm:px-2.5 sm:text-sm ${
-                    isPropertyTypeSegmentSelected(val)
-                      ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]"
-                      : "border-white/15 text-white/75"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-wrap gap-2 lg:justify-end">
-            <span className="w-full text-[10px] font-semibold uppercase tracking-wide text-white/40 lg:w-auto lg:self-end lg:pb-3 lg:pr-1">
-              AI sort
-            </span>
-            {(
-              [
-                ["priceAsc", "Best deals"] as const,
-                ["recommended", "High ROI"] as const,
-                ["aiScore", "High demand"] as const,
-              ] as const
-            ).map(([sort, label]) => {
-              const active = listSort === sort;
-              return (
-                <button
-                  key={sort}
-                  type="button"
-                  onClick={() => applyPatch({ sort })}
-                  className={`min-h-[44px] rounded-2xl border px-3 text-xs font-semibold sm:text-sm ${
-                    active ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]" : "border-white/15 text-white/75"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-
+  const totalPages = Math.max(1, Math.ceil(total / 24));
   const hasResults = data.length > 0;
   const showPaginationBar = !loading && !fetchError && hasResults && totalPages > 1;
 
@@ -900,8 +620,11 @@ function LecipmListingsExplorerInner() {
       </div>
     ) : null;
 
+  const desktopSortValue =
+    listSort === "priceAsc" || listSort === "priceDesc" || listSort === "newest" ? listSort : "newest";
+
   return (
-    <div className="min-h-screen bg-black pb-36 text-white lg:pb-0">
+    <div className="min-h-screen bg-black pb-24 text-white lg:pb-0">
       <header className="sticky top-0 z-40 border-b border-[#D4AF37]/20 bg-black/95 backdrop-blur-md">
         <div className="mx-auto max-w-6xl px-4 pt-2 sm:px-6">
           <p className="text-[11px] font-normal leading-snug text-white/40 sm:text-xs sm:text-white/45">
@@ -928,62 +651,66 @@ function LecipmListingsExplorerInner() {
               Search properties
             </button>
           </form>
-
-          <div className="hidden flex-wrap items-center gap-2 lg:flex lg:shrink-0">
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#D4AF37]/25 p-1">
-              <button
-                type="button"
-                onClick={() => applyPatch({ mapLayout: "list" })}
-                className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
-                  viewMode === "list" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
-                }`}
-              >
-                List
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  applyPatch({ mapLayout: "split" });
-                  focusListingsMap();
-                }}
-                className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
-                  viewMode === "split" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
-                }`}
-              >
-                Split
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  applyPatch({ mapLayout: "map" });
-                  focusListingsMap();
-                }}
-                className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
-                  viewMode === "map" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
-                }`}
-              >
-                Map
-              </button>
-            </div>
-            <label className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-white/45">Sort</span>
-              <select
-                value={listSort}
-                onChange={(e) => applyPatch({ sort: e.target.value })}
-                className="min-h-[40px] flex-1 bg-transparent py-1 text-sm text-white focus:outline-none"
-              >
-                <option value="recommended">Recommended</option>
-                <option value="priceAsc">Best value (price ↑)</option>
-                <option value="priceDesc">Price (high → low)</option>
-                <option value="aiScore">High demand</option>
-                <option value="newest">Newest</option>
-              </select>
-            </label>
-          </div>
         </div>
       </header>
 
-      {topFilterStrip}
+      {/* Desktop-only: single view/sort row (no duplicate toggles elsewhere). */}
+      <div className="mx-auto mb-6 hidden max-w-7xl items-center justify-between px-4 sm:px-6 lg:flex">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => applyPatch({ mapLayout: "list" })}
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm transition",
+              viewMode === "list"
+                ? "bg-neutral-700 text-white ring-1 ring-white/15"
+                : "bg-neutral-800 text-white hover:bg-neutral-700"
+            )}
+          >
+            List
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              applyPatch({ mapLayout: "split" });
+              focusListingsMap();
+            }}
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm transition",
+              viewMode === "split"
+                ? "bg-neutral-700 text-white ring-1 ring-white/15"
+                : "bg-neutral-800 text-white hover:bg-neutral-700"
+            )}
+          >
+            Split
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              applyPatch({ mapLayout: "map" });
+              focusListingsMap();
+            }}
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm transition",
+              viewMode === "map"
+                ? "bg-neutral-700 text-white ring-1 ring-white/15"
+                : "bg-neutral-800 text-white hover:bg-neutral-700"
+            )}
+          >
+            Map
+          </button>
+        </div>
+        <select
+          value={desktopSortValue}
+          onChange={(e) => applyPatch({ sort: e.target.value })}
+          className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-white"
+          aria-label="Sort listings"
+        >
+          <option value="newest">Newest</option>
+          <option value="priceAsc">Price (low-high)</option>
+          <option value="priceDesc">Price (high-low)</option>
+        </select>
+      </div>
 
       {/* Mobile: full filter controls (desktop has the same UI in the left sidebar).
           Header "Filters" scrolls here so choices are visible without leaving the page. */}
@@ -1046,27 +773,19 @@ function LecipmListingsExplorerInner() {
             {fetchError ? (
               <ErrorState message={fetchError} onRetry={() => void fetchList()} />
             ) : loading ? (
-              <ListingsGridSkeleton count={6} />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-64 animate-pulse rounded-xl bg-neutral-800" />
+                ))}
+              </div>
             ) : data.length === 0 ? (
-              <EmptyState title={BROWSE_EMPTY_LISTINGS.title} description={BROWSE_EMPTY_LISTINGS.description}>
-                <>
-                  <button
-                    type="button"
-                    onClick={() => reset()}
-                    className="min-h-[48px] rounded-2xl px-6 font-semibold text-black"
-                    style={{ backgroundColor: ACCENT }}
-                  >
-                    Reset filters
-                  </button>
-                  <Link
-                    href="/explore"
-                    className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border-2 px-6 font-semibold transition hover:bg-white/[0.06]"
-                    style={{ borderColor: ACCENT, color: ACCENT }}
-                  >
-                    Browse featured listings
-                  </Link>
-                </>
-              </EmptyState>
+              <div className="py-20 text-center">
+                <h2 className="text-2xl text-white">No listings found</h2>
+                <p className="mt-2 text-neutral-400">Try adjusting your filters or search location.</p>
+                <button type="button" onClick={() => resetFilters()} className="mt-6 rounded-xl bg-[#C9A96A] px-6 py-3 text-black">
+                  Reset filters
+                </button>
+              </div>
             ) : (
               <>
                 {paginationBar}
@@ -1082,71 +801,62 @@ function LecipmListingsExplorerInner() {
             className="flex min-h-0 w-full scroll-mt-28 flex-col gap-4 lg:scroll-mt-24"
           >
             {smartMapPanel}
-            {mapSearchEl}
+            <div className="flex h-full min-h-[400px] w-full min-w-0 flex-1 flex-col lg:min-h-[min(560px,calc(100vh-7rem))]">
+              <GoogleListingsMap listings={data} />
+            </div>
+            {SHOW_LEGACY_MAP_SEARCH ? mapSearchEl : null}
           </section>
         ) : null}
       </div>
 
       <nav
-        className="fixed bottom-[calc(3.65rem+env(safe-area-inset-bottom))] left-0 right-0 z-[62] flex items-center justify-between gap-2 border-t border-neutral-700 bg-black/95 px-4 py-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md lg:hidden"
+        className="fixed bottom-0 left-0 z-[70] flex w-full justify-around border-t border-neutral-800 bg-black/95 py-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden"
         aria-label="Filters, sort, and map or list view"
       >
         <button
           type="button"
           onClick={scrollMobileBrowseFiltersIntoView}
-          className="min-h-[44px] shrink-0 rounded-xl border border-white/15 bg-[#141414]/90 px-3 py-2 text-sm font-semibold text-white/90 shadow-sm shadow-black/30 transition hover:bg-white/[0.08]"
+          className="touch-manipulation px-2 text-sm text-neutral-300 active:text-white"
         >
           Filters
         </button>
-
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              applyPatch({ mapLayout: "list" });
-              setSplitMobilePane("list");
-            }}
-            className={cn(
-              "min-h-[44px] shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
-              viewMode === "list" || (viewMode === "split" && splitMobilePane === "list")
-                ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-md shadow-black/40"
-                : "border-white/15 bg-neutral-800/90 text-white/85 hover:bg-neutral-700/90"
-            )}
-          >
-            List
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              applyPatch({ mapLayout: "map" });
-              setSplitMobilePane("map");
-              focusListingsMap();
-            }}
-            className={cn(
-              "min-h-[44px] shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
-              viewMode === "map" || (viewMode === "split" && splitMobilePane === "map")
-                ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-md shadow-black/40"
-                : "border-white/15 bg-neutral-800/90 text-white/85 hover:bg-neutral-700/90"
-            )}
-          >
-            Map
-          </button>
-        </div>
-
-        <label className="flex min-h-[44px] min-w-0 shrink items-center rounded-lg border border-white/15 bg-black px-1.5">
-          <span className="sr-only">Sort listings</span>
-          <select
-            value={listSort}
-            onChange={(e) => applyPatch({ sort: e.target.value })}
-            className="max-w-[7.75rem] min-w-0 flex-1 cursor-pointer truncate bg-transparent py-1.5 pl-1 text-xs font-medium text-white focus:outline-none sm:max-w-[10rem] sm:text-sm"
-          >
-            <option value="recommended">Recommended</option>
-            <option value="priceAsc">Best value (price ↑)</option>
-            <option value="priceDesc">Price (high → low)</option>
-            <option value="aiScore">High demand</option>
-            <option value="newest">Newest</option>
-          </select>
-        </label>
+        <button
+          type="button"
+          onClick={() => {
+            applyPatch({ mapLayout: "list" });
+            setSplitMobilePane("list");
+          }}
+          className={cn(
+            "touch-manipulation px-2 text-sm text-neutral-300 active:text-white",
+            (viewMode === "list" || (viewMode === "split" && splitMobilePane === "list")) && "text-[#C9A96A]"
+          )}
+        >
+          List
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            applyPatch({ mapLayout: "map" });
+            setSplitMobilePane("map");
+            focusListingsMap();
+          }}
+          className={cn(
+            "touch-manipulation px-2 text-sm text-neutral-300 active:text-white",
+            (viewMode === "map" || (viewMode === "split" && splitMobilePane === "map")) && "text-[#C9A96A]"
+          )}
+        >
+          Map
+        </button>
+        <select
+          value={desktopSortValue}
+          onChange={(e) => applyPatch({ sort: e.target.value })}
+          className="max-w-[40%] min-w-0 touch-manipulation rounded-lg border border-neutral-700/60 bg-transparent text-sm text-neutral-300"
+          aria-label="Sort listings"
+        >
+          <option value="newest">Sort: newest</option>
+          <option value="priceAsc">Sort: price ↑</option>
+          <option value="priceDesc">Sort: price ↓</option>
+        </select>
       </nav>
     </div>
   );
