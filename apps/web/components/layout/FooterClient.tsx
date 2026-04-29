@@ -49,30 +49,38 @@ export default function FooterClient() {
 
   if (isMarketingHomePath(pathname)) {
     return (
-      <footer className="border-t border-premium-gold/15 bg-[#0B0B0B]">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          <nav
-            aria-label="Footer"
-            className="flex flex-col gap-5 border-b border-white/5 pb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:border-0 sm:pb-0"
-          >
-            <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-              <Link href="/search" className="font-semibold text-premium-gold hover:underline">
-                Search
-              </Link>
-              <Link href="/listings" className="font-semibold text-premium-gold hover:underline">
+      <footer className="border-t border-premium-gold/20 bg-black">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr] lg:gap-12">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-premium-gold/80">LECIPM</p>
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-neutral-400">
+                Where prestige meets smart real estate — built for Québec-focused discovery and professional-grade analysis.
+              </p>
+            </div>
+            <nav aria-label="Quick links" className="flex flex-col gap-4 text-sm">
+              <Link href="/listings" className="font-semibold text-neutral-200 transition hover:text-premium-gold">
                 Listings
               </Link>
+              <Link href="/search" className="text-neutral-400 transition hover:text-premium-gold">
+                Search hubs
+              </Link>
+              <Link href="/analyze" className="text-neutral-400 transition hover:text-premium-gold">
+                Analyze
+              </Link>
+            </nav>
+            <nav aria-label="Legal" className="flex flex-col gap-4 text-sm">
               <Link href="/legal/privacy" className={`${linkCls} font-medium`}>
                 {t("footer.privacy")}
               </Link>
               <Link href="/legal/terms" className={`${linkCls} font-medium`}>
                 {t("footer.terms")}
               </Link>
-            </div>
-            <p className="text-xs text-[#9CA3AF]">
-              © {year} {PLATFORM_COPYRIGHT_LINE}
-            </p>
-          </nav>
+            </nav>
+          </div>
+          <p className="mt-12 border-t border-white/5 pt-8 text-center text-xs text-neutral-500 sm:text-left">
+            © {year} {PLATFORM_COPYRIGHT_LINE}
+          </p>
         </div>
       </footer>
     );

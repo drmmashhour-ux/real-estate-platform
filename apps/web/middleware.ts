@@ -206,8 +206,9 @@ export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
 
-    // STEP 14 — ADD REDIRECTS
-    const isBnhub = pathname.startsWith("/bnhub") || /^\/[a-z]{2}\/[a-z]{2}\/bnhub/.test(pathname);
+    /** Root BN Hub app host — `/bnhub/*` only. Localized `/[locale]/[country]/bnhub` stays in-app. */
+    const isLocalizedBnhub = /^\/[a-z]{2}\/[a-z]{2}\/bnhub(\/|$)/.test(pathname);
+    const isRootBnhub = pathname.startsWith("/bnhub");
     const isBroker = pathname.includes("/dashboard/broker");
     const isAdmin = pathname.includes("/dashboard/admin");
 
@@ -215,7 +216,7 @@ export async function middleware(request: NextRequest) {
     const BROKER_URL = process.env.NEXT_PUBLIC_BROKER_URL || "https://broker.lecipm.com";
     const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "https://admin.lecipm.com";
 
-    if (isBnhub) {
+    if (isRootBnhub && !isLocalizedBnhub) {
       return NextResponse.redirect(new URL(BNHUB_URL + pathname + request.nextUrl.search, request.url));
     }
     if (isBroker) {

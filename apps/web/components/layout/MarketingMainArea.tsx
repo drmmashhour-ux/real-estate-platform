@@ -13,7 +13,7 @@ export function MarketingMainArea({ children }: { children: ReactNode }) {
   return (
     <main
       id="main-content"
-      className={`flex min-h-0 flex-1 flex-col overflow-x-hidden ${home ? "pb-8 sm:pb-10" : "pb-40"}`}
+      className={`flex min-h-0 flex-1 flex-col overflow-x-hidden ${home ? "pb-8 sm:pb-10" : "pb-24 lg:pb-8"}`}
     >
       {children}
     </main>

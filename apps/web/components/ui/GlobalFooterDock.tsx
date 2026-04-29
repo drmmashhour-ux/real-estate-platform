@@ -87,7 +87,7 @@ export function GlobalFooterDock() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-2 sm:px-4"
+      className="pointer-events-none fixed inset-x-0 z-[68] flex justify-center px-2 sm:px-4 lg:bottom-0 lg:z-50 max-lg:bottom-[calc(4.15rem+env(safe-area-inset-bottom))]"
       style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
     >
       <div

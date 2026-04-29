@@ -97,7 +97,7 @@ export function VisitorGuideChat({ surface }: { surface: Surface }) {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-0 right-0 z-[80] p-4 sm:p-6">
+    <div className="pointer-events-none fixed bottom-28 right-4 z-[65] p-4 sm:p-6 lg:bottom-8 lg:right-6 lg:z-[80]">
       <div className="pointer-events-auto ml-auto w-full max-w-sm">
         {open && (
           <div className="mb-3 flex max-h-[min(70vh,520px)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/50 backdrop-blur-md">

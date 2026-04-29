@@ -8,6 +8,7 @@ import { FooterHistoryNavProvider } from "@/components/layout/FooterHistoryNavCo
 import FooterClient from "@/components/layout/FooterClient";
 import { HadiaLiteModeGate } from "@/components/hadia-lite/HadiaLiteModeGate";
 import { MarketingMainArea } from "@/components/layout/MarketingMainArea";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { GlobalFooterDock } from "@/components/ui/GlobalFooterDock";
 import { ImmoChatWidgetLazy } from "@/components/immo/ImmoChatWidgetLazy";
 import { AppProviders } from "@/app/providers";
@@ -81,6 +82,8 @@ export default async function CountryChromeLayout({ children, params }: Props) {
                 <HadiaLiteModeGate>{children}</HadiaLiteModeGate>
               </InvestmentShellChrome>
             </MarketingMainArea>
+
+            <MobileBottomNav />
 
             <CookieConsentBanner />
 

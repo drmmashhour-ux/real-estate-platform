@@ -79,7 +79,7 @@ export default function HeaderClient({
     ) : null;
 
   const actionRow = (
-    <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-6">
+    <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 md:gap-6">
       {phoneTel && !clutterFreeHome ? (
         <a
           href={phoneTel}
@@ -145,14 +145,23 @@ export default function HeaderClient({
         className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${clutterFreeHome ? "py-2 sm:py-2.5" : "py-3.5"}`}
       >
         <div className={`flex flex-col ${clutterFreeHome ? "gap-2" : "gap-3"}`}>
-          <div className="flex items-center justify-center gap-2 sm:gap-3">
-            <QuebecFlagIcon className="h-4 w-6 shrink-0 rounded-sm sm:h-5 sm:w-7" aria-hidden />
-            <LecipmBrandLockup href="/" variant="dark" align="center" density="compact" priority />
-            {!clutterFreeHome ? (
-              <span className="hidden rounded-full border border-premium-gold/35 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold xl:inline">
-                Quebec Platform
+          <div className="grid min-h-[2.75rem] w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 gap-y-2 sm:min-h-[3rem]">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <span className="flex shrink-0 items-center" aria-hidden>
+                <QuebecFlagIcon className="h-4 w-6 rounded-sm sm:h-5 sm:w-7" />
               </span>
-            ) : null}
+              {!clutterFreeHome ? (
+                <span className="hidden truncate rounded-full border border-premium-gold/35 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold xl:inline">
+                  Quebec Platform
+                </span>
+              ) : null}
+            </div>
+
+            <div className="justify-self-center px-2">
+              <LecipmBrandLockup href="/" variant="dark" align="center" density="compact" priority />
+            </div>
+
+            <div className="flex min-w-0 justify-self-end">{actionRow}</div>
           </div>
 
           <div className="hidden items-center justify-center gap-8 lg:flex" aria-hidden={false}>
@@ -214,8 +223,6 @@ export default function HeaderClient({
               </nav>
             )}
           </div>
-
-          {actionRow}
         </div>
       </div>
 

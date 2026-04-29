@@ -33,7 +33,7 @@ export default function FloatingContact() {
 
   return (
     <div
-      className="pointer-events-auto fixed bottom-6 end-6 z-50 flex flex-col gap-3 sm:bottom-8 sm:end-8"
+      className="pointer-events-auto hidden lg:fixed lg:bottom-8 lg:end-8 lg:z-50 lg:flex lg:flex-col lg:gap-3"
       aria-label="Quick contact"
     >
       {telHref ? (

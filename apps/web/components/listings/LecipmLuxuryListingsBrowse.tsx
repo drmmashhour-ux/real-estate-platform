@@ -273,7 +273,7 @@ export function LecipmLuxuryListingsBrowse({
 
       <p className="text-sm text-gray-400">
         Curated preview layout — full inventory search & map:{" "}
-        <Link href={`${base}/listings?view=explorer`} className="font-medium text-[#D4AF37] underline-offset-4 hover:underline">
+        <Link href={`${base}/listings`} className="font-medium text-[#D4AF37] underline-offset-4 hover:underline">
           open explorer
         </Link>
         .

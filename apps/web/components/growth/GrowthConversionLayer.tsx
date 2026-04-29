@@ -8,9 +8,11 @@ import { pushRetargetingPayload } from "@/lib/retargeting/data-layer";
 import { track } from "@/lib/tracking";
 import { INVESTMENT_HUB_FOCUS, isInvestmentShellPath } from "@/lib/product-focus";
 import { suppressGlobalMarketingOverlays } from "@/lib/ui/dev-overlays";
+import { appPathnameFromUrl } from "@/i18n/pathname";
 
 function hiddenPath(pathname: string | null): boolean {
   if (!pathname) return true;
+  if (appPathnameFromUrl(pathname) === "/") return true;
   if (INVESTMENT_HUB_FOCUS && isInvestmentShellPath(pathname)) return true;
   if (pathname.startsWith("/dashboard")) return true;
   if (pathname.startsWith("/admin")) return true;
@@ -41,7 +43,7 @@ export function GrowthConversionLayer() {
   return (
     <>
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-premium-gold/30 bg-[#0B0B0B]/95 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md sm:px-4"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-premium-gold/30 bg-[#0B0B0B]/95 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md sm:px-4 lg:bottom-0 max-lg:bottom-[calc(4.15rem+env(safe-area-inset-bottom))] max-lg:z-[68]"
         role="region"
         aria-label="Quick actions"
       >

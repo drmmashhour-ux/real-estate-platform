@@ -31,6 +31,7 @@ import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine
 import { recordListingsExplorerViewOnce } from "@/modules/conversion/funnel-metrics.service";
 import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
 import { recordListingCtaClick } from "@/modules/conversion/conversion-monitoring.service";
+import { cn } from "@/lib/utils";
 
 const SEARCH_REASSURANCE_LINE =
   "Verified listings where marked · Clear prices · Secure platform";
@@ -103,6 +104,9 @@ function toMapListing(row: Row, dealKind: "sale" | "rent"): MapListing | null {
   };
 }
 
+/** URL/query source of truth: `mapLayout` — aligns list / split / map chrome across viewports. */
+type BrowseViewMode = "list" | "split" | "map";
+
 function mergeFeatures(features: string[], key: string, on: boolean): string[] {
   const s = new Set(features.map((x) => x.toLowerCase()));
   const k = key.toLowerCase();
@@ -125,7 +129,8 @@ function LecipmListingsExplorerInner() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
-  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
+  /** Narrow viewport only: when `viewMode === "split"`, which full-width pane is shown. Not stored in URL. */
+  const [splitMobilePane, setSplitMobilePane] = useState<"list" | "map">("list");
   const [mqLg, setMqLg] = useState(false);
 
   useEffect(() => {
@@ -144,7 +149,7 @@ function LecipmListingsExplorerInner() {
 
   const appliedFromUrl = useMemo(() => urlParamsToGlobalFilters(new URLSearchParams(searchParams.toString())), [searchParams]);
 
-  const mapLayout = appliedFromUrl.mapLayout ?? "split";
+  const viewMode: BrowseViewMode = appliedFromUrl.mapLayout ?? "split";
 
   useEffect(() => {
     const city = searchParams.get("city") ?? "";
@@ -342,22 +347,30 @@ function LecipmListingsExplorerInner() {
     router.push(`${pathname}?${p.toString()}`);
   };
 
-  const hasMore = page * 24 < total;
-  const totalPages = Math.max(1, Math.ceil(total / 24));
 
-  const showListColumn = mapLayout === "list" || mapLayout === "split";
-  const showMapColumn = mapLayout === "map" || mapLayout === "split";
+  const showListColumn = viewMode === "list" || viewMode === "split";
+  const showMapColumn = viewMode === "map" || viewMode === "split";
 
   const mobileShowList =
-    mapLayout === "list" || (mapLayout === "split" && mobileTab === "list");
+    viewMode === "list" || (viewMode === "split" && splitMobilePane === "list");
   const mobileShowMap =
-    mapLayout === "map" || (mapLayout === "split" && mobileTab === "map");
+    viewMode === "map" || (viewMode === "split" && splitMobilePane === "map");
 
-  const showListPane = mqLg ? showListColumn : mobileShowList;
-  const showMapPane = mqLg ? showMapColumn : mobileShowMap;
+  const showMapPaneByLayout = mqLg ? showMapColumn : mobileShowMap;
+
+  const settledEmptyResults = !loading && !fetchError && data.length === 0;
+
+  const showListPane =
+    (mqLg ? showListColumn : mobileShowList) ||
+    settledEmptyResults;
+
+  const showMapPane =
+    showMapPaneByLayout && !fetchError && !settledEmptyResults && (loading || data.length > 0);
+
+  const hasDesktopMapColumn = mqLg && Boolean(showMapPane) && showMapColumn;
 
   const mainGridClass =
-    mqLg && showListColumn && showMapColumn
+    mqLg && showListColumn && hasDesktopMapColumn
       ? "lg:grid-cols-[300px_minmax(0,1fr)_minmax(320px,440px)]"
       : mqLg
         ? "lg:grid-cols-[300px_minmax(0,1fr)]"
@@ -859,8 +872,36 @@ function LecipmListingsExplorerInner() {
     </section>
   );
 
+  const hasResults = data.length > 0;
+  const showPaginationBar = !loading && !fetchError && hasResults && totalPages > 1;
+
+  const paginationBar = showPaginationBar ? (
+      <div className="mb-6 flex items-center justify-between gap-4 px-0 sm:px-1">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => goToPage(page - 1)}
+          className="min-h-[44px] shrink-0 rounded-2xl border border-[#D4AF37]/25 px-4 text-sm font-semibold text-white/85 transition hover:bg-white/5 disabled:pointer-events-none disabled:opacity-30"
+        >
+          Back
+        </button>
+        <span className="text-center text-sm tabular-nums text-white/40">
+          Page {page} of {totalPages}
+        </span>
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => goToPage(page + 1)}
+          className="min-h-[44px] shrink-0 rounded-2xl px-5 text-sm font-bold text-black transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-30"
+          style={{ backgroundColor: ACCENT }}
+        >
+          Next
+        </button>
+      </div>
+    ) : null;
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black pb-36 text-white lg:pb-0">
       <header className="sticky top-0 z-40 border-b border-[#D4AF37]/20 bg-black/95 backdrop-blur-md">
         <div className="mx-auto max-w-6xl px-4 pt-2 sm:px-6">
           <p className="text-[11px] font-normal leading-snug text-white/40 sm:text-xs sm:text-white/45">
@@ -888,23 +929,13 @@ function LecipmListingsExplorerInner() {
             </button>
           </form>
 
-          <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
-            <button
-              type="button"
-              onClick={scrollMobileBrowseFiltersIntoView}
-              className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#D4AF37]/40 px-4 text-sm font-semibold text-[#D4AF37] lg:hidden"
-            >
-              Filters
-            </button>
+          <div className="hidden flex-wrap items-center gap-2 lg:flex lg:shrink-0">
             <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#D4AF37]/25 p-1">
               <button
                 type="button"
-                onClick={() => {
-                  applyPatch({ mapLayout: "list" });
-                  setMobileTab("list");
-                }}
+                onClick={() => applyPatch({ mapLayout: "list" })}
                 className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
-                  mapLayout === "list" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
+                  viewMode === "list" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
                 }`}
               >
                 List
@@ -916,7 +947,7 @@ function LecipmListingsExplorerInner() {
                   focusListingsMap();
                 }}
                 className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
-                  mapLayout === "split" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
+                  viewMode === "split" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
                 }`}
               >
                 Split
@@ -925,11 +956,10 @@ function LecipmListingsExplorerInner() {
                 type="button"
                 onClick={() => {
                   applyPatch({ mapLayout: "map" });
-                  setMobileTab("map");
                   focusListingsMap();
                 }}
                 className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
-                  mapLayout === "map" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
+                  viewMode === "map" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
                 }`}
               >
                 Map
@@ -986,32 +1016,6 @@ function LecipmListingsExplorerInner() {
         </section>
       ) : null}
 
-      {mapLayout === "split" ? (
-        <div className="mx-auto flex max-w-6xl gap-2 border-b border-[#D4AF37]/15 px-4 pb-2 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileTab("list")}
-            className={`min-h-[48px] flex-1 rounded-2xl text-sm font-semibold ${
-              mobileTab === "list" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "bg-[#111] text-white/60"
-            }`}
-          >
-            List
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("map");
-              focusListingsMap();
-            }}
-            className={`min-h-[48px] flex-1 rounded-2xl text-sm font-semibold ${
-              mobileTab === "map" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "bg-[#111] text-white/60"
-            }`}
-          >
-            Map
-          </button>
-        </div>
-      ) : null}
-
       <div
         className={`mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 sm:py-12 lg:gap-6 lg:py-16 ${mainGridClass}`}
       >
@@ -1064,32 +1068,11 @@ function LecipmListingsExplorerInner() {
                 </>
               </EmptyState>
             ) : (
-              listingsGrid
+              <>
+                {paginationBar}
+                {listingsGrid}
+              </>
             )}
-
-            {!loading && !fetchError && data.length > 0 ? (
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm text-white/70">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => goToPage(page - 1)}
-                  className="min-h-[44px] rounded-2xl border border-[#D4AF37]/25 px-4 disabled:opacity-30"
-                >
-                  Previous
-                </button>
-                <span className="tabular-nums">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={!hasMore}
-                  onClick={() => goToPage(page + 1)}
-                  className="min-h-[44px] rounded-2xl border border-[#D4AF37]/25 px-4 disabled:opacity-30"
-                >
-                  Next
-                </button>
-              </div>
-            ) : null}
           </section>
         ) : null}
 
@@ -1104,6 +1087,67 @@ function LecipmListingsExplorerInner() {
         ) : null}
       </div>
 
+      <nav
+        className="fixed bottom-[calc(3.65rem+env(safe-area-inset-bottom))] left-0 right-0 z-[62] flex items-center justify-between gap-2 border-t border-neutral-700 bg-black/95 px-4 py-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md lg:hidden"
+        aria-label="Filters, sort, and map or list view"
+      >
+        <button
+          type="button"
+          onClick={scrollMobileBrowseFiltersIntoView}
+          className="min-h-[44px] shrink-0 rounded-xl border border-white/15 bg-[#141414]/90 px-3 py-2 text-sm font-semibold text-white/90 shadow-sm shadow-black/30 transition hover:bg-white/[0.08]"
+        >
+          Filters
+        </button>
+
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              applyPatch({ mapLayout: "list" });
+              setSplitMobilePane("list");
+            }}
+            className={cn(
+              "min-h-[44px] shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
+              viewMode === "list" || (viewMode === "split" && splitMobilePane === "list")
+                ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-md shadow-black/40"
+                : "border-white/15 bg-neutral-800/90 text-white/85 hover:bg-neutral-700/90"
+            )}
+          >
+            List
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              applyPatch({ mapLayout: "map" });
+              setSplitMobilePane("map");
+              focusListingsMap();
+            }}
+            className={cn(
+              "min-h-[44px] shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
+              viewMode === "map" || (viewMode === "split" && splitMobilePane === "map")
+                ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-md shadow-black/40"
+                : "border-white/15 bg-neutral-800/90 text-white/85 hover:bg-neutral-700/90"
+            )}
+          >
+            Map
+          </button>
+        </div>
+
+        <label className="flex min-h-[44px] min-w-0 shrink items-center rounded-lg border border-white/15 bg-black px-1.5">
+          <span className="sr-only">Sort listings</span>
+          <select
+            value={listSort}
+            onChange={(e) => applyPatch({ sort: e.target.value })}
+            className="max-w-[7.75rem] min-w-0 flex-1 cursor-pointer truncate bg-transparent py-1.5 pl-1 text-xs font-medium text-white focus:outline-none sm:max-w-[10rem] sm:text-sm"
+          >
+            <option value="recommended">Recommended</option>
+            <option value="priceAsc">Best value (price ↑)</option>
+            <option value="priceDesc">Price (high → low)</option>
+            <option value="aiScore">High demand</option>
+            <option value="newest">Newest</option>
+          </select>
+        </label>
+      </nav>
     </div>
   );
 }
@@ -1115,3 +1159,5 @@ export function LecipmListingsExplorer() {
     </SearchFiltersProvider>
   );
 }
+
+export default LecipmListingsExplorer;

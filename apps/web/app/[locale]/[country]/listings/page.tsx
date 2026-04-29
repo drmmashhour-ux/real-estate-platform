@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LecipmListingsExplorer } from "@/components/listings/LecipmListingsExplorer";
-import { LecipmLuxuryListingsBrowse } from "@/components/listings/LecipmLuxuryListingsBrowse";
+import LecipmListingsExplorer from "@/components/listings/LecipmListingsExplorer";
 import { ListingsGridSkeleton } from "@/components/ui/SkeletonBlock";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { seoConfig } from "@/lib/seo/config";
@@ -24,32 +23,23 @@ export async function generateMetadata({
   });
 }
 
-export default async function ListingsIndexPage({
-  params,
-  searchParams,
-}: {
+/** Canonical explorer surface — always `LecipmListingsExplorer` (no `searchParams.view`). */
+export default function Page(props: {
   params: Promise<{ locale: string; country: string }>;
-  searchParams: Promise<{ view?: string }>;
 }) {
-  const { locale, country } = await params;
-  const sp = await searchParams;
-
-  if (sp.view === "explorer") {
-    return (
-      <Suspense
-        fallback={
-          <div className="min-h-screen bg-black px-4 py-10 text-white sm:px-6">
-            <div className="mx-auto max-w-6xl space-y-4">
-              <div className="h-12 max-w-full animate-pulse rounded-2xl bg-white/10" />
-              <ListingsGridSkeleton count={6} />
-            </div>
+  void props.params;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-black px-4 py-10 text-white sm:px-6">
+          <div className="mx-auto max-w-6xl space-y-4">
+            <div className="h-12 max-w-full animate-pulse rounded-2xl bg-white/10" />
+            <ListingsGridSkeleton count={6} />
           </div>
-        }
-      >
-        <LecipmListingsExplorer />
-      </Suspense>
-    );
-  }
-
-  return <LecipmLuxuryListingsBrowse locale={locale} country={country} />;
+        </div>
+      }
+    >
+      <LecipmListingsExplorer />
+    </Suspense>
+  );
 }

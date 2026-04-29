@@ -3,9 +3,10 @@
 @import "../design-system/design-system.css";
 @import "../design-system/lecipm-premium.css";
 
-/* Mobile shell — prevent horizontal scroll; scale with rem/% */
+/* Mobile shell — prevent horizontal scroll; align with body background (no white flash) */
 html {
   scroll-behavior: smooth;
+  background: #000000;
   max-width: 100%;
   overflow-x: hidden;
 }
@@ -73,6 +74,30 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .launch-banner-subtle-pulse {
     animation: none;
+  }
+}
+
+/* Landing — subtle headline reveal */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 
