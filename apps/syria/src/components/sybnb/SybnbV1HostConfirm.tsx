@@ -5,9 +5,9 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-type Props = { bookingId: string };
+type Props = { bookingId: string; bookingVersion: number };
 
-export function SybnbV1HostConfirm({ bookingId }: Props) {
+export function SybnbV1HostConfirm({ bookingId, bookingVersion }: Props) {
   const t = useTranslations("Sybnb.v1");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -16,9 +16,20 @@ export function SybnbV1HostConfirm({ bookingId }: Props) {
   async function post() {
     setErr(null);
     setLoading(true);
+    const cv = Math.max(1, Math.floor(bookingVersion));
     try {
-      const res = await fetch(`/api/sybnb/bookings/${bookingId}/confirm`, { method: "POST" });
+      const res = await fetch(`/api/sybnb/bookings/${bookingId}/confirm`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientVersion: cv }),
+      });
       const data = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
+      if (data.error === "CONFLICT" || data.error === "SOFT_LOCK") {
+        setErr("bookingConflictRefresh");
+        router.refresh();
+        return;
+      }
       if (!res.ok || data.success === false) {
         setErr("actionFailed");
         return;
@@ -45,7 +56,7 @@ export function SybnbV1HostConfirm({ bookingId }: Props) {
       >
         {loading ? t("sending") : t("confirmBooking")}
       </button>
-      {err ? <p className="mt-2 text-xs text-red-700 [dir=rtl]:text-right">{t("actionFailed")}</p> : null}
+      {err ? <p className="mt-2 text-xs text-red-700 [dir=rtl]:text-right">{t(err)}</p> : null}
     </div>
   );
 }

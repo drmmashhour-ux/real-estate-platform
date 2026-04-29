@@ -2,6 +2,7 @@ import type { SybnbBooking } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { sybnbBookingPaymentSettled } from "@/lib/sybnb/booking-timeline";
 import { sendReminder, type SybnbReminderKind } from "@/lib/sybnb/sybnb-reminder-send";
+import { notifyCheckinSoonSms, notifyGuestPaymentPendingSms } from "@/lib/sybnb/sybnb-sms";
 
 export type { SybnbReminderKind };
 
@@ -15,6 +16,13 @@ function subHours(base: Date, hours: number): Date {
 
 function addHours(base: Date, hours: number): Date {
   return new Date(base.getTime() + hours * MS_H);
+}
+
+/** SMS check-in copy only when stay starts within the next 24 hours (cron-aligned window). */
+function checkInWithinNext24Hours(booking: Pick<SybnbBooking, "checkIn">, now: Date): boolean {
+  const ci = booking.checkIn.getTime();
+  const t = now.getTime();
+  return ci > t && ci <= t + 24 * MS_H;
 }
 
 function manualPaymentPhaseStale(booking: Pick<SybnbBooking, "status" | "paymentStatus" | "approvedAt" | "updatedAt">, now: Date): boolean {
@@ -146,6 +154,11 @@ export async function runSybnbRemindersCron(now: Date = new Date()): Promise<{
           },
         });
         deliveries.push({ bookingId: b.id, kind, recipientUserId: uid });
+        try {
+          await notifyGuestPaymentPendingSms(b.id);
+        } catch (e) {
+          console.error("[SYBNB_SMS] payment_pending", e instanceof Error ? e.message : e);
+        }
       } else if (kind === "CHECKIN_SOON") {
         for (const uid of [b.guestId, b.hostId]) {
           if (!(await canSendReminder(b.id, kind, uid, now))) continue;
@@ -158,6 +171,13 @@ export async function runSybnbRemindersCron(now: Date = new Date()): Promise<{
             },
           });
           deliveries.push({ bookingId: b.id, kind, recipientUserId: uid });
+        }
+        if (checkInWithinNext24Hours(b, now)) {
+          try {
+            await notifyCheckinSoonSms(b.id);
+          } catch (e) {
+            console.error("[SYBNB_SMS] checkin_soon", e instanceof Error ? e.message : e);
+          }
         }
       }
     }

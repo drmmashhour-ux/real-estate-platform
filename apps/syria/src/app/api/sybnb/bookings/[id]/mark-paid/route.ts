@@ -64,7 +64,7 @@ export async function POST(_req: Request, context: RouteParams): Promise<Respons
 
   const updated = await prisma.sybnbBooking.update({
     where: { id: b.id },
-    data: { sybnbSimulatedEscrowStatus: SYBNB_SIM_ESCROW_SECURED },
+    data: { sybnbSimulatedEscrowStatus: SYBNB_SIM_ESCROW_SECURED, version: { increment: 1 } },
   });
 
   const actor = sybnbAuditRoleHostAction(user.role);

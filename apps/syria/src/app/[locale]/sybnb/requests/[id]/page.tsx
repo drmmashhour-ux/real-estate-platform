@@ -14,6 +14,7 @@ import { EscrowStatus } from "@/components/sybnb/EscrowStatus";
 import { HostPaymentInstructions } from "@/components/sybnb/HostPaymentInstructions";
 import { SybnbV1HostActions } from "@/components/sybnb/SybnbV1HostActions";
 import { SybnbV1HostConfirm } from "@/components/sybnb/SybnbV1HostConfirm";
+import { PwaPersistBookingSnapshot } from "@/components/pwa/PwaPersistBookingSnapshot";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -98,6 +99,12 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 [dir=rtl]:text-right">
+      <PwaPersistBookingSnapshot
+        locale={locale}
+        bookingId={b.id}
+        title={title}
+        status={String(b.status)}
+      />
       <h1 className="text-xl font-semibold text-neutral-900">{t("requestTitle")}</h1>
 
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -136,13 +143,13 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
         ) : null}
         {isHost && b.status === "requested" ? (
           <div className="mt-4">
-            <SybnbV1HostActions bookingId={b.id} />
+            <SybnbV1HostActions bookingId={b.id} bookingVersion={b.version} />
           </div>
         ) : null}
         {isHost && b.status === "approved" ? (
           <div className="mt-4 space-y-1">
             <p className="text-xs text-neutral-600">{t("confirmHint")}</p>
-            <SybnbV1HostConfirm bookingId={b.id} />
+            <SybnbV1HostConfirm bookingId={b.id} bookingVersion={b.version} />
           </div>
         ) : null}
       </div>

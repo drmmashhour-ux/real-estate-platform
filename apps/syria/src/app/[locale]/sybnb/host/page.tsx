@@ -151,7 +151,7 @@ export default async function SybnbHostPage(props: { params: Promise<{ locale: s
                       {t("v1.openRequest")}
                     </Link>
                   </div>
-                  <SybnbV1HostActions bookingId={b.id} />
+                  <SybnbV1HostActions bookingId={b.id} bookingVersion={b.version} />
                 </div>
               </li>
             ))}

@@ -71,7 +71,27 @@ export async function POST(req: NextRequest): Promise<Response> {
     return sybnbFail(firstZodIssueMessage(parsed.error), 400);
   }
 
-  const { listingId, checkIn, checkOut, guests } = parsed.data;
+  const { listingId, checkIn, checkOut, guests, clientRequestId } = parsed.data;
+
+  if (clientRequestId) {
+    const hit = await prisma.sybnbSyncIdempotency.findUnique({
+      where: { clientRequestId },
+      select: { userId: true, kind: true, bookingId: true },
+    });
+    if (hit && hit.kind === "booking_request" && hit.userId === user.id) {
+      const existing = await prisma.sybnbBooking.findUnique({
+        where: { id: hit.bookingId },
+        include: {
+          listing: { select: { id: true, titleAr: true, titleEn: true, city: true, images: true, currency: true } },
+          guest: { select: { id: true, email: true, name: true } },
+          host: { select: { id: true, email: true, name: true } },
+        },
+      });
+      if (existing) {
+        return sybnbJson({ booking: existing, duplicate: true }, 200);
+      }
+    }
+  }
 
   const result = await createSybnbV1Request({
     guestId: user.id,
@@ -119,6 +139,22 @@ export async function POST(req: NextRequest): Promise<Response> {
       total: result.booking.totalAmount,
     },
   });
+
+  if (clientRequestId) {
+    await prisma.sybnbSyncIdempotency
+      .create({
+        data: {
+          clientRequestId,
+          clientId: deviceId,
+          userId: user.id,
+          kind: "booking_request",
+          bookingId: result.booking.id,
+        },
+      })
+      .catch(() => {});
+  }
+
+  broadcastSybnbBookingUpdated(result.booking.id, { status: result.booking.status });
 
   return sybnbJson({ booking: result.booking }, 201);
 }

@@ -529,6 +529,9 @@ model SybnbBooking {
   totalAmount  Int    @map("total_amount")
   currency     String @default("SYP")
 
+  /// Optimistic locking — incremented on each successful mutation (approve/decline/confirm, lifecycle, etc.).
+  version Int @default(1)
+
   status        SybnbBookingStatus     @default(requested) @map("status")
   paymentStatus SybnbGuestPaymentState @default(none) @map("payment_status")
 
@@ -576,6 +579,22 @@ model SybnbReminderLog {
 
   @@index([bookingId, reminderType, recipientUserId, sentAt])
   @@map("sybnb_reminder_log")
+}
+
+/// Client-generated idempotency keys for unified offline sync (`sybnb_sync_queue`).
+/// Composite PK `(client_request_id, client_id)` prevents unsafe cross-device replay of the same synthetic key.
+model SybnbSyncIdempotency {
+  clientRequestId String @map("client_request_id") @db.VarChar(128)
+  clientId        String @default("__legacy__") @map("client_id") @db.VarChar(128)
+  userId          String @map("user_id")
+  kind            String @db.VarChar(32)
+  bookingId       String @map("booking_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@id([clientRequestId, clientId])
+  @@index([userId])
+  @@index([bookingId])
+  @@map("sybnb_sync_idempotency")
 }
 
 /// In-platform booking chat (SYBNB 2.0). Append-only; no external delivery.

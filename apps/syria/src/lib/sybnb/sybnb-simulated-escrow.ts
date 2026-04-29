@@ -60,7 +60,7 @@ export async function syncSybnbSimulatedEscrowReleased(bookingId: string): Promi
 
   await prisma.sybnbBooking.update({
     where: { id: b.id },
-    data: { sybnbSimulatedEscrowStatus: SYBNB_SIM_ESCROW_RELEASED },
+    data: { sybnbSimulatedEscrowStatus: SYBNB_SIM_ESCROW_RELEASED, version: { increment: 1 } },
   });
 
   await logSybnbEvent({

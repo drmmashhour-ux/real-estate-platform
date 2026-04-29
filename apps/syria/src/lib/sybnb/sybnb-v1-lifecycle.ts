@@ -29,7 +29,7 @@ export async function autoCompleteDueSybnbBookings(now: Date = new Date()): Prom
   }
   const res = await prisma.sybnbBooking.updateMany({
     where: { id: { in: ids } },
-    data: { status: "completed" },
+    data: { status: "completed", version: { increment: 1 } },
   });
   const parties = await prisma.sybnbBooking.findMany({
     where: { id: { in: ids } },

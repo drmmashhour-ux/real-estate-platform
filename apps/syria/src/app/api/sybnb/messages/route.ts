@@ -19,6 +19,7 @@ import type { SyriaUserRole } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { sybnbFail, sybnbJson, firstZodIssueMessage } from "@/lib/sybnb/sybnb-api-http";
 import { sybnbIdParam } from "@/lib/sybnb/sybnb-api-schemas";
+import { broadcastSybnbChatActivity } from "@/lib/realtime/sybnb-broadcast";
 import { logSybnbEvent } from "@/lib/sybnb/sybnb-audit";
 import {
   analyzeMessage,
@@ -98,7 +99,9 @@ const postBodySchema = z.object({
   bookingId: z.string().trim().min(1),
   content: z.string(),
   confirmRisk: z.boolean().optional(),
-  /** Idempotent retries / offline queue flush */
+  /** Preferred dedupe key — matches offline queue row id / `X-Client-Request-Id` */
+  clientRequestId: z.string().trim().min(8).max(128).optional(),
+  /** Idempotent retries / offline queue flush (legacy alias); prefer `clientRequestId` when both sent */
   clientId: z.string().trim().min(8).max(128).optional(),
 });
 
@@ -157,14 +160,17 @@ export async function POST(req: Request): Promise<Response> {
     return sybnbFail(normalized.error === "too_long" ? "message_too_long" : "message_empty", 400);
   }
 
-  const clientIdTrimmed = parsed.data.clientId?.trim();
+  const clientRequestIdTrimmed = parsed.data.clientRequestId?.trim();
+  const clientIdFromBody = parsed.data.clientId?.trim();
+  /** Stored on `SybnbMessage.clientId` — per-message idempotency fingerprint */
+  const fingerprint = clientRequestIdTrimmed || clientIdFromBody;
 
-  if (clientIdTrimmed) {
+  if (fingerprint) {
     const existing = await prisma.sybnbMessage.findFirst({
       where: {
         bookingId,
         senderId: user.id,
-        clientId: clientIdTrimmed,
+        clientId: fingerprint,
       },
       select: {
         id: true,
@@ -177,6 +183,7 @@ export async function POST(req: Request): Promise<Response> {
       },
     });
     if (existing) {
+      broadcastSybnbChatActivity(bookingId);
       return sybnbJson({ message: existing, duplicate: true });
     }
   }
@@ -199,7 +206,7 @@ export async function POST(req: Request): Promise<Response> {
       content: normalized.content,
       riskLevel: analysis.risk,
       riskFlags: analysis.flags as unknown as Prisma.InputJsonValue,
-      ...(clientIdTrimmed ? { clientId: clientIdTrimmed } : {}),
+      ...(fingerprint ? { clientId: fingerprint } : {}),
     },
     select: {
       id: true,
@@ -270,6 +277,8 @@ export async function POST(req: Request): Promise<Response> {
     actorRole: part,
     metadata: { length: normalized.content.length },
   });
+
+  broadcastSybnbChatActivity(bookingId);
 
   return sybnbJson({ message: row });
 }

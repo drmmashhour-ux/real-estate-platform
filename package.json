@@ -53,6 +53,7 @@
     "check:cross-contamination": "pnpm --filter @lecipm/syria exec tsx ../../scripts/check-cross-contamination.ts",
     "check:darlink-isolation": "pnpm check:cross-contamination && pnpm check:isolation",
     "platform:ready": "node scripts/platform-ready.js",
+    "post-deploy:check": "node scripts/post-deploy-check.js",
     "drbrain:check": "node scripts/drbrain-check.js",
     "typecheck": "pnpm ci:typecheck && pnpm --filter @lecipm/mobile run typecheck",
     "ci:typecheck": "pnpm --filter @lecipm/web run ci:typecheck",

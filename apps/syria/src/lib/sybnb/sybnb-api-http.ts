@@ -11,6 +11,22 @@ export function sybnbJson(data: object, status = 200, headers?: HeadersInit): Ne
   return NextResponse.json({ success: true, ...data }, { status, headers });
 }
 
+/** Optimistic-lock conflict — client should refetch and refresh UI. */
+export function sybnbBookingConflict(currentVersion: number, currentStatus: string): NextResponse {
+  return NextResponse.json(
+    { success: false, error: "CONFLICT", currentVersion, currentStatus },
+    { status: 409 },
+  );
+}
+
+/** Optional race guard (`SYBNB_BOOKING_SOFT_LOCK_MS`). */
+export function sybnbBookingSoftLock(currentVersion: number, currentStatus: string): NextResponse {
+  return NextResponse.json(
+    { success: false, error: "SOFT_LOCK", currentVersion, currentStatus },
+    { status: 409 },
+  );
+}
+
 export function firstZodIssueMessage(err: ZodError): string {
   return err.issues[0]?.message?.trim() || "Invalid input";
 }

@@ -6,16 +6,24 @@ import {
   persistSyriaSessionSnapshotRemote,
   SyriaOfflineProvider,
 } from "./SyriaOfflineProvider";
+import { PwaInstallBanner } from "@/components/pwa/PwaInstallBanner";
+import { SybnbSyncProvider } from "@/components/sybnb/SybnbSyncProvider";
+import { SybnbSyncRibbon } from "@/components/sybnb/SybnbSyncRibbon";
+
+function SyriaServiceWorkerRegister() {
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+  }, []);
+
+  return null;
+}
 
 function SyriaOfflineEffects() {
   useEffect(() => {
     if (!syriaFlags.SYRIA_OFFLINE_FIRST) return;
 
     void persistSyriaSessionSnapshotRemote();
-
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-    const path = "/offline-sw.js";
-    void navigator.serviceWorker.register(path, { scope: "/" }).catch(() => {});
 
     const onVis = () => {
       if (document.visibilityState === "visible") {
@@ -33,8 +41,13 @@ export function SyriaOfflineRoot(props: { children: React.ReactNode }) {
   const enabled = syriaFlags.SYRIA_OFFLINE_FIRST;
   return (
     <SyriaOfflineProvider offlineFirstEnabled={enabled}>
-      {enabled ? <SyriaOfflineEffects /> : null}
-      {props.children}
+      <SybnbSyncProvider>
+        <SyriaServiceWorkerRegister />
+        {enabled ? <SyriaOfflineEffects /> : null}
+        <PwaInstallBanner />
+        <SybnbSyncRibbon />
+        {props.children}
+      </SybnbSyncProvider>
     </SyriaOfflineProvider>
   );
 }

@@ -2,12 +2,11 @@
 # Coordinate with deploy-vercel.yml — avoid duplicate prod pushes.
 #
 # Secrets (repository):
-#   APP_URL — origin only (e.g. https://prod.example.com) for scripts/check-slo.js
-#   CURRENT_APP_URL — baseline origin for scripts/shadow-traffic-check.js
-#   CANDIDATE_APP_URL — preview/staging origin after deploy-preview
-#   VERCEL_TOKEN — scripts/rollback-production.js (never logged)
-# CI uses local Postgres only inside validate — never production DATABASE_URL.
-# Never echo secrets.
+#   APP_URL — origin for scripts/post-deploy-check.js (production GET /api/db-test); pass via DEPLOY_HEALTH_BASE_URL in post_deploy_health job too.
+#   VERCEL_TOKEN — scripts/rollback-production.js only (never logged).
+# Optional: DRBRAIN_CI_DATABASE_URL — read-only DB for pnpm drbrain:check when vars.POST_DEPLOY_DRBRAIN=true.
+# CI validate uses local Postgres only — never production DATABASE_URL.
+# Never echo secrets. Payments stay manual / kill-switched in env below — never auto-enable.
 
 name: Deploy Gate
 
@@ -243,6 +242,55 @@ jobs:
         run: node scripts/check-slo.js
 
       - name: Rollback on failure
+        if: failure()
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/rollback-production.js
+
+  # --- Post-deploy: HTTP health against production + optional DrBrain; rollback on failure ---
+  post_deploy_health:
+    name: Post-deploy health monitor (rollback on failure)
+    needs: slo-check-100
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      DEPLOY_HEALTH_BASE_URL: ${{ secrets.APP_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: API health (GET /api/db-test)
+        run: node scripts/post-deploy-check.js
+
+      - name: Install deps for DrBrain (optional)
+        if: ${{ vars.POST_DEPLOY_DRBRAIN == 'true' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: DrBrain check (optional — set repo variable POST_DEPLOY_DRBRAIN=true + secret DRBRAIN_CI_DATABASE_URL)
+        if: ${{ vars.POST_DEPLOY_DRBRAIN == 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DRBRAIN_CI_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DRBRAIN_CI_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::POST_DEPLOY_DRBRAIN=true requires secret DRBRAIN_CI_DATABASE_URL (read-only CI mirror)."
+            exit 1
+          fi
+          pnpm drbrain:check
+
+      - name: Rollback on DrBrain / health failure
         if: failure()
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

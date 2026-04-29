@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { enqueueAction } from "@repo/offline";
-import { SYRIA_OFFLINE_NAMESPACE } from "@/lib/offline/constants";
+import { enqueueSybnbSyncItem } from "@/lib/sybnb/sync-queue";
+import { getClientId } from "@/lib/sybnb/sync-client-id";
 import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
 import { Input } from "@/components/ui/Input";
 import { triggerNarration } from "@/lib/demo/narrator";
@@ -32,18 +32,19 @@ export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
     setError(null);
     setLoading(true);
     const guestN = Math.max(1, Math.floor(Number(guests) || 1));
+    const syncId = crypto.randomUUID();
     try {
       if (!online) {
-        await enqueueAction(SYRIA_OFFLINE_NAMESPACE, {
-          id: crypto.randomUUID(),
-          type: "booking_request",
+        enqueueSybnbSyncItem({
+          id: syncId,
+          type: "booking_action",
           payload: {
+            action: "booking_request",
             listingId,
             checkIn,
             checkOut,
             guests: guestN,
           },
-          clientVersion: 1,
         });
         await refreshQueueHint();
         setError(null);
@@ -52,12 +53,18 @@ export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
 
       const res = await fetch("/api/sybnb/bookings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Client-Request-Id": syncId,
+        },
+        credentials: "same-origin",
         body: JSON.stringify({
           listingId,
           checkIn,
           checkOut,
           guests: guestN,
+          clientRequestId: syncId,
+          clientId: getClientId(),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -66,6 +73,17 @@ export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
         error?: string;
       };
       if (!res.ok || data.success === false) {
+        enqueueSybnbSyncItem({
+          id: syncId,
+          type: "booking_action",
+          payload: {
+            action: "booking_request",
+            listingId,
+            checkIn,
+            checkOut,
+            guests: guestN,
+          },
+        });
         setError(data.error ?? "error");
         return;
       }
@@ -74,6 +92,17 @@ export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
         router.refresh();
       }
     } catch {
+      enqueueSybnbSyncItem({
+        id: syncId,
+        type: "booking_action",
+        payload: {
+          action: "booking_request",
+          listingId,
+          checkIn,
+          checkOut,
+          guests: guestN,
+        },
+      });
       setError("network");
     } finally {
       setLoading(false);

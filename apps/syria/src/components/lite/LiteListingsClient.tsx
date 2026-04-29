@@ -9,6 +9,7 @@ import type { LiteListingListItem } from "@/lib/lite/lite-queries";
 import { liteListingsSnapshotKey } from "@/lib/lite/lite-cache-keys";
 import { firstPageCacheKey } from "@/lib/lite/list-paging";
 import { getNetworkMode } from "@/lib/core/network";
+import { persistPwaLastListings } from "@/lib/pwa/local-cache";
 
 type ApiJson = {
   ok?: boolean;
@@ -106,7 +107,10 @@ export function LiteListingsClient(props: {
         setNextPage(np);
         setSrc("network");
 
-        if (page === 1 && items.length) persistFirstPageLs(items);
+        if (page === 1 && items.length) {
+          persistFirstPageLs(items);
+          persistPwaLastListings(locale, items);
+        }
       } catch {
         setErr(t("connectionSlowRetry"));
         /* keepExisting items — no reset */

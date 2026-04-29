@@ -3,13 +3,12 @@
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { enqueueAction } from "@repo/offline";
-import { SYRIA_OFFLINE_NAMESPACE } from "@/lib/offline/constants";
+import { enqueueSybnbSyncItem } from "@/lib/sybnb/sync-queue";
 import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
 
-type Props = { bookingId: string };
+type Props = { bookingId: string; bookingVersion: number };
 
-export function SybnbV1HostActions({ bookingId }: Props) {
+export function SybnbV1HostActions({ bookingId, bookingVersion }: Props) {
   const t = useTranslations("Sybnb.v1");
   const router = useRouter();
   const [loading, setLoading] = useState<"appr" | "dec" | null>(null);
@@ -19,26 +18,70 @@ export function SybnbV1HostActions({ bookingId }: Props) {
   async function post(path: "approve" | "decline") {
     setErr(null);
     setLoading(path === "approve" ? "appr" : "dec");
+    const syncId = crypto.randomUUID();
+    const cv = Math.max(1, Math.floor(bookingVersion));
+
     try {
       if (!online) {
-        await enqueueAction(SYRIA_OFFLINE_NAMESPACE, {
-          id: crypto.randomUUID(),
-          type: path === "approve" ? "approve" : "decline",
-          payload: { bookingId },
-          clientVersion: 1,
+        enqueueSybnbSyncItem({
+          id: syncId,
+          type: "booking_action",
+          payload: {
+            bookingId,
+            action: path === "approve" ? "approve" : "decline",
+            clientVersion: cv,
+          },
         });
         await refreshQueueHint();
+        router.refresh();
         setLoading(null);
         return;
       }
-      const res = await fetch(`/api/sybnb/bookings/${bookingId}/${path}`, { method: "POST" });
-      const data = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
+
+      const res = await fetch(`/api/sybnb/bookings/${bookingId}/${path}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientRequestId: syncId, clientVersion: cv }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        error?: string;
+      };
+      if (data.error === "CONFLICT") {
+        setErr("bookingConflictRefresh");
+        router.refresh();
+        return;
+      }
+      if (data.error === "SOFT_LOCK") {
+        setErr("bookingConflictRefresh");
+        router.refresh();
+        return;
+      }
       if (!res.ok || data.success === false) {
+        enqueueSybnbSyncItem({
+          id: syncId,
+          type: "booking_action",
+          payload: {
+            bookingId,
+            action: path === "approve" ? "approve" : "decline",
+            clientVersion: cv,
+          },
+        });
         setErr("actionFailed");
         return;
       }
       router.refresh();
     } catch {
+      enqueueSybnbSyncItem({
+        id: syncId,
+        type: "booking_action",
+        payload: {
+          bookingId,
+          action: path === "approve" ? "approve" : "decline",
+          clientVersion: cv,
+        },
+      });
       setErr("actionFailed");
     } finally {
       setLoading(null);
@@ -63,7 +106,7 @@ export function SybnbV1HostActions({ bookingId }: Props) {
       >
         {loading === "dec" ? t("sending") : t("decline")}
       </button>
-      {err ? <p className="w-full text-xs text-red-700 [dir=rtl]:text-right">{t("actionFailed")}</p> : null}
+      {err ? <p className="w-full text-xs text-red-700 [dir=rtl]:text-right">{t(err)}</p> : null}
     </div>
   );
 }

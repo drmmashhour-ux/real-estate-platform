@@ -39,6 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "Metadata" });
   return {
     ...darlinkMetadataBase(),
+    manifest: "/manifest.json",
+    themeColor: "#000000",
+    appleWebApp: {
+      capable: true,
+      title: "SYBNB",
+      statusBarStyle: "black-translucent",
+    },
     ...buildDarlinkPageMetadata({
       locale: locale as DarlinkLocale,
       title: t("title"),

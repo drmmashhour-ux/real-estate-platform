@@ -51,7 +51,7 @@ export async function POST(_req: Request, context: RouteParams): Promise<Respons
       if (!sybnbConfig.paymentsEnabled) {
         await prisma.sybnbBooking.update({
           where: { id: sybnbB.id },
-          data: { paymentStatus: "manual_required" },
+          data: { paymentStatus: "manual_required", version: { increment: 1 } },
         });
         await createCheckoutSession({ bookingId: sybnbB.id, actorId: user.id });
         return sybnbJson({ message: MANUAL_MESSAGE });

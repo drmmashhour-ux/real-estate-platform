@@ -3,8 +3,8 @@
 /**
  * Booking-scoped SYBNB chat (guest ↔ host). Loads/sends via `/api/sybnb/messages` — session-bound, audited server-side.
  *
- * - Offline: queue in localStorage (`sybnb_message_queue`), optimistic pending rows, flush when online.
- * - `clientId` on POST dedupes retries via API.
+ * - Offline: unified queue `sybnb_sync_queue` + global `SybnbSyncProvider` sequential sync.
+ * - `clientRequestId` (queue row id) + `clientId` (device) on POST dedupe retries via API.
  */
 
 import type { ReactNode } from "react";
@@ -17,12 +17,13 @@ import {
 } from "@/lib/sybnb/sybnb-message-content";
 import { analyzeMessage, analysisNeedsUserConfirmation } from "@/lib/sybnb/chat-fraud";
 import {
-  enqueueSybnbMessage,
-  readSybnbMessageQueue,
-  removeSybnbQueuedMessage,
-  SYBNB_MESSAGE_QUEUE_MAX,
-  updateSybnbQueuedMessage,
-} from "@/lib/sybnb/sybnb-message-queue";
+  enqueueSybnbSyncItem,
+  pendingMessagesForBooking,
+  readSybnbSyncQueue,
+  upsertSybnbSyncItem,
+} from "@/lib/sybnb/sync-queue";
+import { getClientId } from "@/lib/sybnb/sync-client-id";
+import { useSybnbSync } from "@/components/sybnb/SybnbSyncProvider";
 import { TrustBadge } from "@/components/sybnb/TrustBadge";
 
 export type SybnbChatMessageDto = {
@@ -54,8 +55,6 @@ type Props = {
   suggestionsEnabled?: boolean;
 };
 
-const FLUSH_INTERVAL_MS = 12_000;
-
 function messageShowsRiskBadge(m: Pick<SybnbChatMessageDto, "riskLevel">): boolean {
   return m.riskLevel === "medium" || m.riskLevel === "high";
 }
@@ -86,18 +85,18 @@ function mergeChatDisplay(
     });
   }
 
-  const q = readSybnbMessageQueue().filter((x) => x.bookingId === bookingId);
+  const q = pendingMessagesForBooking(bookingId);
   for (const item of q) {
     if (serverClientIds.has(item.id)) continue;
     if (optimistic.some((o) => o.clientId === item.id)) continue;
     out.push({
       id: `q-${item.id}`,
       senderId: viewerUserId,
-      content: item.content,
-      createdAt: item.createdAt,
+      content: String(item.payload.content ?? ""),
+      createdAt: new Date(item.createdAt).toISOString(),
       clientId: item.id,
       riskLevel: null,
-      delivery: item.status === "failed" ? "failed" : "pending",
+      delivery: item.failed ? "failed" : "pending",
     });
   }
 
@@ -118,6 +117,7 @@ export function ChatBox({
   const t = useTranslations("Sybnb.chat");
   const tt = useTranslations("Sybnb.trust");
   const locale = useLocale();
+  const { subscribeRefresh, runSyncNow } = useSybnbSync();
 
   const [remoteMessages, setRemoteMessages] = useState<SybnbChatMessageDto[]>([]);
   const [optimistic, setOptimistic] = useState<{ clientId: string; content: string; createdAt: string }[]>([]);
@@ -134,7 +134,6 @@ export function ChatBox({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const flushingRef = useRef(false);
 
   const displayMessages = useMemo(
     () => mergeChatDisplay(remoteMessages, optimistic, bookingId, viewerUserId),
@@ -226,11 +225,15 @@ export function ChatBox({
       const res = await fetch("/api/sybnb/messages", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Client-Request-Id": clientId,
+        },
         body: JSON.stringify({
           bookingId,
           content: trimmed,
-          clientId,
+          clientRequestId: clientId,
+          clientId: getClientId(),
           ...(confirmRisk ? { confirmRisk: true } : {}),
         }),
       });
@@ -270,65 +273,13 @@ export function ChatBox({
     setQueueEpoch((e) => e + 1);
   }, []);
 
-  const flushQueuedMessages = useCallback(async () => {
-    if (typeof navigator !== "undefined" && !navigator.onLine) return;
-    if (flushingRef.current) return;
-    flushingRef.current = true;
-    try {
-      let guard = 0;
-      let removedAny = false;
-      while (guard < SYBNB_MESSAGE_QUEUE_MAX + 5) {
-        guard += 1;
-        const batch = readSybnbMessageQueue();
-        if (batch.length === 0) break;
-        const item = batch[0];
-        try {
-          const result = await postMessageRequest(item.content, false, item.id);
-          if (result.kind === "warn") {
-            updateSybnbQueuedMessage(item.id, { status: "failed" });
-            bumpQueue();
-            break;
-          }
-          if (result.kind === "error") {
-            updateSybnbQueuedMessage(item.id, { status: "failed" });
-            bumpQueue();
-            break;
-          }
-          removeSybnbQueuedMessage(item.id);
-          removedAny = true;
-          bumpQueue();
-        } catch {
-          updateSybnbQueuedMessage(item.id, { status: "failed" });
-          bumpQueue();
-          break;
-        }
-      }
-      if (removedAny) {
-        await loadRemote();
-      }
-    } finally {
-      flushingRef.current = false;
-    }
-  }, [bumpQueue, loadRemote, postMessageRequest]);
-
   useEffect(() => {
-    const onOnline = () => {
-      void flushQueuedMessages();
-    };
-    window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
-  }, [flushQueuedMessages]);
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      void flushQueuedMessages();
-    }, FLUSH_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [flushQueuedMessages]);
-
-  useEffect(() => {
-    void flushQueuedMessages();
-  }, [flushQueuedMessages]);
+    const unsub = subscribeRefresh(() => {
+      bumpQueue();
+      void loadRemote();
+    });
+    return unsub;
+  }, [subscribeRefresh, bumpQueue, loadRemote]);
 
   async function send() {
     if (!canSend || sending) return;
@@ -345,12 +296,13 @@ export function ChatBox({
         return;
       }
       const clientId = crypto.randomUUID();
-      enqueueSybnbMessage({
+      enqueueSybnbSyncItem({
         id: clientId,
-        bookingId,
-        content: normalized.content,
-        createdAt: new Date().toISOString(),
-        status: "pending",
+        type: "message",
+        payload: {
+          bookingId,
+          content: normalized.content,
+        },
       });
       bumpQueue();
       setDraft("");
@@ -378,12 +330,13 @@ export function ChatBox({
       }
       if (result.kind === "error") {
         setOptimistic((prev) => prev.filter((o) => o.clientId !== clientId));
-        enqueueSybnbMessage({
+        enqueueSybnbSyncItem({
           id: clientId,
-          bookingId,
-          content: normalized.content,
-          createdAt,
-          status: "failed",
+          type: "message",
+          payload: {
+            bookingId,
+            content: normalized.content,
+          },
         });
         bumpQueue();
         setError(t("sendError"));
@@ -395,12 +348,13 @@ export function ChatBox({
       await loadRemote();
     } catch {
       setOptimistic((prev) => prev.filter((o) => o.clientId !== clientId));
-      enqueueSybnbMessage({
+      enqueueSybnbSyncItem({
         id: clientId,
-        bookingId,
-        content: normalized.content,
-        createdAt,
-        status: "failed",
+        type: "message",
+        payload: {
+          bookingId,
+          content: normalized.content,
+        },
       });
       bumpQueue();
       setError(t("sendError"));
@@ -435,12 +389,13 @@ export function ChatBox({
       setRiskModal(null);
       pendingRiskRef.current = null;
       const createdAt = new Date().toISOString();
-      enqueueSybnbMessage({
+      enqueueSybnbSyncItem({
         id: pair.clientId,
-        bookingId,
-        content: pair.content,
-        createdAt,
-        status: "failed",
+        type: "message",
+        payload: {
+          bookingId,
+          content: pair.content,
+        },
       });
       bumpQueue();
       setOptimistic((prev) => prev.filter((o) => o.clientId !== pair.clientId));
@@ -460,9 +415,11 @@ export function ChatBox({
   }
 
   function retryQueued(clientId: string) {
-    updateSybnbQueuedMessage(clientId, { status: "pending" });
+    const row = readSybnbSyncQueue().find((x) => x.id === clientId);
+    if (!row || row.type !== "message") return;
+    upsertSybnbSyncItem({ ...row, failed: false, retries: 0 });
     bumpQueue();
-    void flushQueuedMessages();
+    void runSyncNow();
   }
 
   function onDraftChange(v: string) {

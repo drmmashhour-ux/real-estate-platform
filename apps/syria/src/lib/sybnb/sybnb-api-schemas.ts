@@ -7,6 +7,10 @@ export const sybnbCreateBookingBody = z.object({
   checkIn: z.string().min(1, "checkIn is required"),
   checkOut: z.string().min(1, "checkOut is required"),
   guests: z.coerce.number().int().min(1, "guests must be at least 1").max(99),
+  /** Unified offline sync replay id — server dedupes (`SybnbSyncIdempotency`). */
+  clientRequestId: z.string().trim().min(8).max(128).optional(),
+  /** Stable device/browser id — auxiliary telemetry & diagnostics */
+  clientId: z.string().trim().min(8).max(128).optional(),
 });
 
 export const sybnbReportBody = z.object({

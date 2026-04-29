@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import type { SybnbBooking, SyriaProperty, SyriaAppUser, SyriaUserRole } from "@/generated/prisma";
+import type { SybnbBooking, SyriaProperty, SyriaUserRole, SybnbBookingStatus } from "@/generated/prisma";
 import { evaluateSybnbStayRequestEligibility } from "@/lib/sybnb/sybnb-booking-rules";
 import { countReportsForProperty } from "@/lib/sy8/sy8-report-threshold";
 import { countUnreviewedSybnbReportsForProperty } from "@/lib/sybnb/sybnb-reports";
@@ -10,6 +10,8 @@ import { SYBNB_SIM_ESCROW_PENDING } from "@/lib/sybnb/sybnb-simulated-escrow";
 import { updateFraudScore } from "@/lib/sybnb/fraud-score";
 import { adjustTrustScore } from "@/lib/sybnb/trust-score";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
+import { notifyGuestBookingApprovedSms } from "@/lib/sybnb/sybnb-sms";
+import { logSybnbEvent } from "@/lib/sybnb/sybnb-audit";
 
 function parseStayDate(s: string): Date | null {
   const t = s.trim();
@@ -31,6 +33,32 @@ function stayNights(checkIn: Date, checkOut: Date): number {
 function nightlyFromListing(p: Pick<SyriaProperty, "pricePerNight" | "price">): number {
   if (p.pricePerNight != null && p.pricePerNight > 0) return p.pricePerNight;
   return Math.max(0, Math.floor(Number(p.price)));
+}
+
+/** Milliseconds — optional cooldown between mutations (`0` = disabled). */
+function sybnbBookingSoftLockMs(): number {
+  const n = Number(process.env.SYBNB_BOOKING_SOFT_LOCK_MS ?? 0);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+async function auditBookingConflict(input: {
+  bookingId: string;
+  userId: string;
+  clientVersion: number;
+  serverVersion: number;
+  phase: string;
+}): Promise<void> {
+  await logSybnbEvent({
+    action: "CONFLICT_DETECTED",
+    bookingId: input.bookingId,
+    userId: input.userId,
+    metadata: {
+      bookingId: input.bookingId,
+      clientVersion: input.clientVersion,
+      serverVersion: input.serverVersion,
+      phase: input.phase,
+    },
+  });
 }
 
 export type CreateSybnbV1RequestResult =
@@ -181,9 +209,21 @@ export async function createSybnbV1Request(input: {
   return { ok: true, booking };
 }
 
-export type HostActionResult = { ok: true; booking: SybnbBooking } | { ok: false; code: "unauthorized" | "not_found" | "forbidden" | "bad_state" };
+export type HostActionResult =
+  | { ok: true; booking: SybnbBooking }
+  | {
+      ok: false;
+      code: "unauthorized" | "not_found" | "forbidden" | "bad_state" | "conflict" | "soft_lock";
+      currentVersion?: number;
+      currentStatus?: SybnbBookingStatus;
+    };
 
-export async function hostApproveSybnbV1Request(input: { userId: string; userRole: SyriaUserRole; bookingId: string }): Promise<HostActionResult> {
+export async function hostApproveSybnbV1Request(input: {
+  userId: string;
+  userRole: SyriaUserRole;
+  bookingId: string;
+  clientVersion: number;
+}): Promise<HostActionResult> {
   const b = await prisma.sybnbBooking.findUnique({ where: { id: input.bookingId.trim() } });
   if (!b) {
     return { ok: false, code: "not_found" };
@@ -193,18 +233,79 @@ export async function hostApproveSybnbV1Request(input: { userId: string; userRol
   if (!isHost && !isAdmin) {
     return { ok: false, code: "forbidden" };
   }
+
+  if (b.status === "approved") {
+    return { ok: true, booking: b };
+  }
   if (b.status !== "requested") {
     return { ok: false, code: "bad_state" };
   }
-  const updated = await prisma.sybnbBooking.update({
-    where: { id: b.id },
+
+  const softMs = sybnbBookingSoftLockMs();
+  if (softMs > 0 && Date.now() - b.updatedAt.getTime() < softMs) {
+    return {
+      ok: false,
+      code: "soft_lock",
+      currentVersion: b.version,
+      currentStatus: b.status,
+    };
+  }
+
+  if (input.clientVersion !== b.version) {
+    await auditBookingConflict({
+      bookingId: b.id,
+      userId: input.userId,
+      clientVersion: input.clientVersion,
+      serverVersion: b.version,
+      phase: "approve_version_mismatch",
+    });
+    return {
+      ok: false,
+      code: "conflict",
+      currentVersion: b.version,
+      currentStatus: b.status,
+    };
+  }
+
+  const upd = await prisma.sybnbBooking.updateMany({
+    where: {
+      id: b.id,
+      version: input.clientVersion,
+      status: "requested",
+    },
     data: {
       status: "approved",
       paymentStatus: "manual_required",
       approvedAt: new Date(),
       sybnbSimulatedEscrowStatus: SYBNB_SIM_ESCROW_PENDING,
+      version: { increment: 1 },
     },
   });
+
+  if (upd.count === 0) {
+    const fresh = await prisma.sybnbBooking.findUnique({ where: { id: b.id } });
+    if (!fresh) {
+      return { ok: false, code: "not_found" };
+    }
+    await auditBookingConflict({
+      bookingId: b.id,
+      userId: input.userId,
+      clientVersion: input.clientVersion,
+      serverVersion: fresh.version,
+      phase: "approve_write_lost",
+    });
+    return {
+      ok: false,
+      code: "conflict",
+      currentVersion: fresh.version,
+      currentStatus: fresh.status,
+    };
+  }
+
+  const updated = await prisma.sybnbBooking.findUnique({ where: { id: b.id } });
+  if (!updated) {
+    return { ok: false, code: "not_found" };
+  }
 
   void updateFraudScore(b.guestId, "booking_approved_good");
   void adjustTrustScore(b.guestId, 5);
@@ -216,10 +317,19 @@ export async function hostApproveSybnbV1Request(input: { userId: string; userRol
     metadata: { bookingId: b.id },
   });
 
+  void notifyGuestBookingApprovedSms(updated.id).catch((err) => {
+    console.error("[SYBNB_SMS] booking_approved", err instanceof Error ? err.message : err);
+  });
+
   return { ok: true, booking: updated };
 }
 
-export async function hostDeclineSybnbV1Request(input: { userId: string; userRole: SyriaUserRole; bookingId: string }): Promise<HostActionResult> {
+export async function hostDeclineSybnbV1Request(input: {
+  userId: string;
+  userRole: SyriaUserRole;
+  bookingId: string;
+  clientVersion: number;
+}): Promise<HostActionResult> {
   const b = await prisma.sybnbBooking.findUnique({ where: { id: input.bookingId.trim() } });
   if (!b) {
     return { ok: false, code: "not_found" };
@@ -229,9 +339,40 @@ export async function hostDeclineSybnbV1Request(input: { userId: string; userRol
   if (!isHost && !isAdmin) {
     return { ok: false, code: "forbidden" };
   }
+
+  if (b.status === "declined") {
+    return { ok: true, booking: b };
+  }
   if (b.status !== "requested") {
     return { ok: false, code: "bad_state" };
   }
+
+  const softMs = sybnbBookingSoftLockMs();
+  if (softMs > 0 && Date.now() - b.updatedAt.getTime() < softMs) {
+    return {
+      ok: false,
+      code: "soft_lock",
+      currentVersion: b.version,
+      currentStatus: b.status,
+    };
+  }
+
+  if (input.clientVersion !== b.version) {
+    await auditBookingConflict({
+      bookingId: b.id,
+      userId: input.userId,
+      clientVersion: input.clientVersion,
+      serverVersion: b.version,
+      phase: "decline_version_mismatch",
+    });
+    return {
+      ok: false,
+      code: "conflict",
+      currentVersion: b.version,
+      currentStatus: b.status,
+    };
+  }
+
   const priorDeclinedCount = await prisma.sybnbBooking.count({
     where: {
       guestId: b.guestId,
@@ -239,10 +380,44 @@ export async function hostDeclineSybnbV1Request(input: { userId: string; userRol
       id: { not: b.id },
     },
   });
-  const updated = await prisma.sybnbBooking.update({
-    where: { id: b.id },
-    data: { status: "declined" },
+
+  const upd = await prisma.sybnbBooking.updateMany({
+    where: {
+      id: b.id,
+      version: input.clientVersion,
+      status: "requested",
+    },
+    data: {
+      status: "declined",
+      version: { increment: 1 },
+    },
   });
+
+  if (upd.count === 0) {
+    const fresh = await prisma.sybnbBooking.findUnique({ where: { id: b.id } });
+    if (!fresh) {
+      return { ok: false, code: "not_found" };
+    }
+    await auditBookingConflict({
+      bookingId: b.id,
+      userId: input.userId,
+      clientVersion: input.clientVersion,
+      serverVersion: fresh.version,
+      phase: "decline_write_lost",
+    });
+    return {
+      ok: false,
+      code: "conflict",
+      currentVersion: fresh.version,
+      currentStatus: fresh.status,
+    };
+  }
+
+  const updated = await prisma.sybnbBooking.findUnique({ where: { id: b.id } });
+  if (!updated) {
+    return { ok: false, code: "not_found" };
+  }
+
   if (priorDeclinedCount >= 1) {
     void adjustTrustScore(b.guestId, -10);
   }
@@ -250,7 +425,12 @@ export async function hostDeclineSybnbV1Request(input: { userId: string; userRol
 }
 
 /** SYBNB-5: manual “booking locked in” after host & guest align (e.g. payment arranged). `approved` → `confirmed`. */
-export async function hostConfirmSybnbV1Booking(input: { userId: string; userRole: SyriaUserRole; bookingId: string }): Promise<HostActionResult> {
+export async function hostConfirmSybnbV1Booking(input: {
+  userId: string;
+  userRole: SyriaUserRole;
+  bookingId: string;
+  clientVersion: number;
+}): Promise<HostActionResult> {
   const b = await prisma.sybnbBooking.findUnique({ where: { id: input.bookingId.trim() } });
   if (!b) {
     return { ok: false, code: "not_found" };
@@ -260,13 +440,76 @@ export async function hostConfirmSybnbV1Booking(input: { userId: string; userRol
   if (!isHost && !isAdmin) {
     return { ok: false, code: "forbidden" };
   }
+
+  if (b.status === "confirmed") {
+    return { ok: true, booking: b };
+  }
   if (b.status !== "approved") {
     return { ok: false, code: "bad_state" };
   }
-  const updated = await prisma.sybnbBooking.update({
-    where: { id: b.id },
-    data: { status: "confirmed" },
+
+  const softMs = sybnbBookingSoftLockMs();
+  if (softMs > 0 && Date.now() - b.updatedAt.getTime() < softMs) {
+    return {
+      ok: false,
+      code: "soft_lock",
+      currentVersion: b.version,
+      currentStatus: b.status,
+    };
+  }
+
+  if (input.clientVersion !== b.version) {
+    await auditBookingConflict({
+      bookingId: b.id,
+      userId: input.userId,
+      clientVersion: input.clientVersion,
+      serverVersion: b.version,
+      phase: "confirm_version_mismatch",
+    });
+    return {
+      ok: false,
+      code: "conflict",
+      currentVersion: b.version,
+      currentStatus: b.status,
+    };
+  }
+
+  const upd = await prisma.sybnbBooking.updateMany({
+    where: {
+      id: b.id,
+      version: input.clientVersion,
+      status: "approved",
+    },
+    data: {
+      status: "confirmed",
+      version: { increment: 1 },
+    },
   });
+
+  if (upd.count === 0) {
+    const fresh = await prisma.sybnbBooking.findUnique({ where: { id: b.id } });
+    if (!fresh) {
+      return { ok: false, code: "not_found" };
+    }
+    await auditBookingConflict({
+      bookingId: b.id,
+      userId: input.userId,
+      clientVersion: input.clientVersion,
+      serverVersion: fresh.version,
+      phase: "confirm_write_lost",
+    });
+    return {
+      ok: false,
+      code: "conflict",
+      currentVersion: fresh.version,
+      currentStatus: fresh.status,
+    };
+  }
+
+  const updated = await prisma.sybnbBooking.findUnique({ where: { id: b.id } });
+  if (!updated) {
+    return { ok: false, code: "not_found" };
+  }
 
   void logTimelineEvent({
     entityType: "sybnb_booking",
