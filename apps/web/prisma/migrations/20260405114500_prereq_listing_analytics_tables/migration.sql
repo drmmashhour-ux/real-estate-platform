@@ -1,5 +1,5 @@
--- Listing demand analytics + price history for urgency / pricing intelligence
--- Idempotent: base tables created earlier in migration 20260405114500 when missing.
+-- Prerequisite: listing_analytics_share_unlock ALTERs listing_analytics before demand_engine CREATE (ordering bug).
+-- Idempotent DDL so 20260415120000 can still run cleanly on installs that skip this revision.
 
 DO $$ BEGIN
   CREATE TYPE "ListingAnalyticsKind" AS ENUM ('FSBO', 'CRM', 'BNHUB');
@@ -26,11 +26,11 @@ CREATE TABLE IF NOT EXISTS "listing_analytics" (
     CONSTRAINT "listing_analytics_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "listing_analytics_listing_kind_listing_id_key" ON "listing_analytics"("listing_kind", "listing_id");
-CREATE INDEX "listing_analytics_listing_kind_listing_id_idx" ON "listing_analytics"("listing_kind", "listing_id");
-CREATE INDEX "listing_analytics_demand_score_idx" ON "listing_analytics"("demand_score");
+CREATE UNIQUE INDEX IF NOT EXISTS "listing_analytics_listing_kind_listing_id_key" ON "listing_analytics"("listing_kind", "listing_id");
+CREATE INDEX IF NOT EXISTS "listing_analytics_listing_kind_listing_id_idx" ON "listing_analytics"("listing_kind", "listing_id");
+CREATE INDEX IF NOT EXISTS "listing_analytics_demand_score_idx" ON "listing_analytics"("demand_score");
 
-CREATE TABLE "listing_price_history" (
+CREATE TABLE IF NOT EXISTS "listing_price_history" (
     "id" TEXT NOT NULL,
     "listing_kind" "ListingAnalyticsKind" NOT NULL,
     "listing_id" TEXT NOT NULL,
