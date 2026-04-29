@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import type { PlatformRole } from "@prisma/client";
+import type { PlatformRole } from "@/types/platform-role";
 
 import { CommandCenterSidebar } from "@/components/lecipm-ui/command-center-sidebar";
 

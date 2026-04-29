@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ComplaintStatus } from "@prisma/client";
+import type { ComplaintStatus } from "@/types/admin-reputation-client";
 
 const STATUSES: ComplaintStatus[] = ["under_review", "confirmed", "dismissed", "resolved"];
 

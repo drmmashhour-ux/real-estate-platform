@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { VerificationStatus } from "@prisma/client";
+import { VerificationStatus } from "@/types/verification-status-client";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { VerifiedListingBadge } from "@/components/listings/VerifiedListingBadge";
 import { ListingCodeBadge } from "@/components/bnhub/ListingCodeBadge";

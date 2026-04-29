@@ -1,4 +1,4 @@
-import type { CommissionStatus } from "@prisma/client";
+import type { CommissionStatus } from "@/types/tenancy-finance-enums-client";
 
 export type SplitRow = {
   id: string;

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import type { PlatformRole } from "@prisma/client";
+import type { PlatformRole } from "@/types/platform-role";
 import { prisma } from "@/lib/db";
 
 const SKIP_ONBOARDING_ROLES = new Set<PlatformRole>(["ADMIN", "ACCOUNTANT"]);

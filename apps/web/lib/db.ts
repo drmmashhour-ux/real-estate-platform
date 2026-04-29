@@ -1,3 +1,10 @@
+import "./db-entry-guard";
+import "server-only";
+
+if (typeof window !== "undefined") {
+  throw new Error("❌ DB imported in client bundle");
+}
+
 import { getLegacyDB } from "@/lib/db/legacy";
 import { coreDB } from "@repo/db-core";
 import { USE_NEW_DB } from "./db-switch";

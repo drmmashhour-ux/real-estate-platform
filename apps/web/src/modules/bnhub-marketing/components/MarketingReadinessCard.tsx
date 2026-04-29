@@ -1,4 +1,4 @@
-import type { BnhubListingMarketingProfile } from "@prisma/client";
+import type { BnhubListingMarketingProfile } from "@/types/bnhub-client-models";
 import { m } from "./marketing-ui-classes";
 
 export function MarketingReadinessCard({

@@ -1,4 +1,4 @@
-import { VerificationStatus } from "@prisma/client";
+import { VerificationStatus } from "@/types/verification-status-client";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { generateListingTrustScore } from "@/src/modules/bnhub/application/trustService";

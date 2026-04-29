@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { DealPriorityLabel, DealRoomStage } from "@prisma/client";
+import type { DealPriorityLabel, DealRoomStage } from "@/types/deal-room-enums";
 import { PriorityBadge, STAGE_ORDER, StageBadge, stageLabel } from "./deal-room-ui";
 
 type RoomRow = {

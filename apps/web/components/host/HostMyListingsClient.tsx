@@ -3,22 +3,22 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ListingStatus } from "@prisma/client";
+import type { ListingStatusApi } from "@/types/listing-status-client";
 
 export type HostListingRow = {
   id: string;
   listingCode: string;
   title: string;
   city: string;
-  listingStatus: ListingStatus;
+  listingStatus: ListingStatusApi;
   nightPriceCents: number;
 };
 
-function statusLabel(s: ListingStatus): string {
-  if (s === ListingStatus.PUBLISHED) return "Live";
-  if (s === ListingStatus.DRAFT) return "Draft";
-  if (s === ListingStatus.UNLISTED) return "Paused";
-  if (s === ListingStatus.PENDING_REVIEW) return "In review";
+function statusLabel(s: ListingStatusApi): string {
+  if (s === "PUBLISHED") return "Live";
+  if (s === "DRAFT") return "Draft";
+  if (s === "UNLISTED") return "Paused";
+  if (s === "PENDING_REVIEW") return "In review";
   return "Other";
 }
 
@@ -126,7 +126,7 @@ export function HostMyListingsClient({ listings }: { listings: HostListingRow[] 
                 >
                   Add photo
                 </Link>
-                {l.listingStatus === ListingStatus.PUBLISHED ? (
+                {l.listingStatus === "PUBLISHED" ? (
                   <button
                     type="button"
                     disabled={busy}

@@ -1,10 +1,9 @@
 /**
- * Client: POST /api/launch/track. Server: use `persistLaunchEvent` directly to avoid self-HTTP.
+ * Client beacon: POST `/api/launch/track`. Server pages should import `persistLaunchEvent`
+ * directly — do not add server-only imports here or they pull `lib/db` into client bundles.
  */
 export async function trackLaunchEvent(event: string, payload: Record<string, unknown> = {}): Promise<void> {
   if (typeof window === "undefined") {
-    const { persistLaunchEvent } = await import("./persistLaunchEvent");
-    await persistLaunchEvent(event, payload);
     return;
   }
   try {

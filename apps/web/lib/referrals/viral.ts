@@ -1,9 +1,6 @@
+export { VIRAL_REF_COOKIE, VIRAL_REF_COOKIE_MAX_AGE } from "./viral.constants";
 import { prisma } from "@/lib/db";
 import { ensureReferralCode } from "@/lib/referrals/code";
-
-/** Cookie set when visitor lands on `/invite?ref=…` (30d). */
-export const VIRAL_REF_COOKIE = "lecipm_viral_ref";
-export const VIRAL_REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 const CUID_LIKE = /^c[a-z0-9]{20,32}$/i;
 const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

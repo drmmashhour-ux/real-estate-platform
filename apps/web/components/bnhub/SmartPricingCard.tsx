@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { getSuggestedPrice, ListingData } from '../../modules/bnhub/pricingEngine';
+import { getSuggestedPrice, ListingData } from "@/modules/bnhub/pricingEngine";
 
 interface SmartPricingCardProps {
   listing: ListingData;

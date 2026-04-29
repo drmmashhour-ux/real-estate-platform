@@ -1,4 +1,4 @@
-import type { OfferStatus } from "@prisma/client";
+import type { OfferStatus } from "@/types/offers-client";
 
 /** Who is attempting the transition (centralized rules). */
 export type OfferActorRole = "buyer" | "broker" | "admin";

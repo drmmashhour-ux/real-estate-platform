@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/db";
 import { getProtectionModeStatus } from "../../../../modules/quebec-trust-hub/protectionMode";
 import { logTrustHubEvent } from "../../../../modules/quebec-trust-hub/trustHubAuditLogger";
 

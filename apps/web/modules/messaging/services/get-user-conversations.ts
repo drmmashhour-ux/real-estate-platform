@@ -1,4 +1,5 @@
-import type { ConversationType, Prisma } from "@prisma/client";
+import type { ConversationType } from "@/types/messaging-client";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getUnreadCountForConversation } from "@/modules/messaging/services/get-unread-count";
 

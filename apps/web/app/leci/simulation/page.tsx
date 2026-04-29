@@ -15,11 +15,11 @@ import {
   Search,
   Scale
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "../../../components/ui/Card";
-import { Button } from "../../../components/ui/Button";
-import { Badge } from "../../../components/ui/Badge";
-import { KNOWLEDGE_PACK } from "../../../../modules/leci/knowledgePack";
-import { validateLeciResponse, ValidationResult } from "../../../../modules/leci/responseValidator";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { KNOWLEDGE_PACK } from "@/modules/leci/knowledgePack";
+import { validateLeciResponse, type ValidationResult } from "@/modules/leci/responseValidator";
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(' ');

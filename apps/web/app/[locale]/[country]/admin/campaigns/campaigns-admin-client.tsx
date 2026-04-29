@@ -1,10 +1,9 @@
 "use client";
 
-import type { MarketingCampaign } from "@prisma/client";
-import { useCallback, useState } from "react";
+import type { MarketingCampaignAdminRow } from "@/types/marketing-campaign-admin-client";import { useCallback, useState } from "react";
 import type { MontrealCampaignPreset } from "@/modules/ads/montreal-ready-campaigns";
 
-export type CampaignRow = MarketingCampaign & { trackedUrlFrCa: string | null };
+export type CampaignRow = MarketingCampaignAdminRow & { trackedUrlFrCa: string | null };
 
 type MontrealRow = MontrealCampaignPreset & { trackedUrlFrCa: string; trackedUrlEnCa: string };
 

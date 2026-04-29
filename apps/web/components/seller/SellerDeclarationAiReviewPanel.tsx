@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
+import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review.logic";
 
 export function SellerDeclarationAiReviewPanel({ review }: { review: SellerDeclarationAiReview | null }) {
   const [open, setOpen] = useState(true);

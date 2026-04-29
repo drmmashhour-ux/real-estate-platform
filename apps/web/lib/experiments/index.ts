@@ -1,3 +1,6 @@
+/** Barrel is server-intended — use `@/lib/experiments/constants` from middleware / shared code. */
+import "server-only";
+
 export * from "@/lib/experiments/constants";
 export * from "@/lib/experiments/browser-session";
 export * from "@/lib/experiments/get-active-experiment";

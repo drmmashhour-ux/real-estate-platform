@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { InsuranceLeadStatus, InsuranceLeadType, InsuranceLeadSource } from "@prisma/client";
-import { InsuranceLeadStatus as ILS } from "@prisma/client";
+import type {
+  InsuranceLeadSource,
+  InsuranceLeadStatus,
+  InsuranceLeadType,
+} from "@/types/insurance-lead-enums-client";
+import { InsuranceLeadStatusMirror as ILS } from "@/types/insurance-lead-enums-client";
 import { insuranceStatusUiLabel } from "@/lib/insurance/hub-status-labels";
 
 type LeadRow = {

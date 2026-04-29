@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { PrismaClient } from "@prisma/client";
 
 export type ExperimentSignalLabel = "early_signal" | "needs_more_data" | "likely_winner";

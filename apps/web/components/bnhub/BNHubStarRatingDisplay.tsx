@@ -1,4 +1,4 @@
-import type { ClassificationBreakdownCore } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
+import type { ClassificationBreakdownCore } from "@/types/bnhub-classification-client";
 
 function starsVisual(rating: number): string {
   const r = Math.max(0, Math.min(5, Math.round(rating)));

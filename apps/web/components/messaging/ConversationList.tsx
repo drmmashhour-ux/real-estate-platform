@@ -4,7 +4,7 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
-import type { ConversationType } from "@prisma/client";
+import type { ConversationType } from "@/types/messaging-client";
 import type { InboxConversationRow } from "@/modules/messaging/services/get-user-conversations";
 
 type Props = {

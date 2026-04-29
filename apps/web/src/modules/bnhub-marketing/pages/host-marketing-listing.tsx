@@ -10,7 +10,7 @@ import { RecommendationCard } from "../components/RecommendationCard";
 import { ExportPromoPanel } from "../components/ExportPromoPanel";
 import { PerformanceStatCard } from "../components/PerformanceStatCard";
 import { ScheduleCampaignModal } from "../components/ScheduleCampaignModal";
-import type { BnhubMarketingCampaignObjective } from "@prisma/client";
+import type { BnhubMarketingCampaignObjective } from "@/types/bnhub-client-models";
 
 export function HostMarketingListing({ listingId }: { listingId: string }) {
   const [bundle, setBundle] = useState<ListingMarketingBundle | null>(null);

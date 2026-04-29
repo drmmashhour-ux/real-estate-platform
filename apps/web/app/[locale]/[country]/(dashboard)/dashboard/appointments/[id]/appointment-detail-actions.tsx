@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { AppointmentStatus, PlatformRole } from "@prisma/client";
+import type { AppointmentStatus } from "@/types/scheduling-client";
+import type { PlatformRole } from "@/types/platform-role";
 
 export function AppointmentDetailActions({
   appointmentId,

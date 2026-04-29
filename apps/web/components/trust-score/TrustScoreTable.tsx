@@ -1,4 +1,7 @@
-import type { LecipmTrustEngineTargetType, LecipmTrustOperationalBand } from "@prisma/client";
+import type {
+  LecipmTrustEngineTargetType,
+  LecipmTrustOperationalBand,
+} from "@/types/trust-enums-client";
 
 export type TrustScoreRow = {
   targetType: LecipmTrustEngineTargetType;

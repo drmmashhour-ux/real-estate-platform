@@ -1,4 +1,4 @@
-import type { TenantInvoiceStatus, TenantInvoiceType } from "@prisma/client";
+import type { TenantInvoiceStatus, TenantInvoiceType } from "@/types/tenancy-finance-enums-client";
 
 export type InvoiceDetailModel = {
   id: string;

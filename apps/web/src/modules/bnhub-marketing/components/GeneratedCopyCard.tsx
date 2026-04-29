@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { BnhubMarketingAsset } from "@prisma/client";
+import type { BnhubMarketingAsset } from "@/types/bnhub-client-models";
 import { m } from "./marketing-ui-classes";
 
 export function GeneratedCopyCard({

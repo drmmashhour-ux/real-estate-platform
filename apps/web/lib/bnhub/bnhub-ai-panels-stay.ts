@@ -1,4 +1,4 @@
-import type { ListingIntelligenceSnapshot } from "@prisma/client";
+import type { ListingIntelligenceSnapshotView } from "@/types/bnhub-client-models";
 import type { BnhubMarketInsightPayload } from "@/lib/bnhub/market-price-insight";
 
 const INVESTMENT_BASIS = "Based on price, location, and demand.";
@@ -23,7 +23,7 @@ function moneyCents(cents: number, currency: string): string {
 export function buildBnhubStayAiInsightPanels(input: {
   market: BnhubMarketInsightPayload;
   trustScore0to100: number;
-  snapshot: ListingIntelligenceSnapshot | null;
+  snapshot: ListingIntelligenceSnapshotView | null;
 }): {
   listNightLabel: string;
   estimatedMarketNightLabel: string;

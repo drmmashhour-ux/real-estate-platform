@@ -11,6 +11,7 @@ import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { hostApproveSybnbV1Request } from "@/lib/sybnb/sybnb-v1-request-service";
 import { broadcastSybnbBookingUpdated } from "@/lib/realtime/sybnb-broadcast";
+import { logSybnbEvent, sybnbAuditRoleHostAction } from "@/lib/sybnb/sybnb-audit";
 import { SYBNB_SYNC_LEGACY_CLIENT_ID } from "@/lib/sybnb/sybnb-sync-constants";
 import { z } from "zod";
 

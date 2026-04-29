@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import type { CareLevel, CareFoodPlanTier } from "@prisma/client";
-
-import { calculateMonthlyCost } from "@/modules/soins/soins-pricing.service";
-import type { CareService } from "@prisma/client";
+import type {
+  CareFoodPlanTier,
+  CareLevel,
+  CareService,
+} from "@/types/soins-care-client";
 
 /** UI-friendly slice of residence services for the calculator */
 export function PricingCalculator(props: {

@@ -7,7 +7,7 @@ import { RoiComparisonTable } from "./RoiComparisonTable";
 import { RoiResultsCard } from "./RoiResultsCard";
 import { RoiConfidenceNote } from "./RoiConfidenceNote";
 import Link from "next/link";
-import { trackFunnelEvent } from "@/lib/funnel/tracker";
+import { trackFunnelEvent } from "@/lib/funnel/tracker-client";
 
 type ApiResult = {
   ok: boolean;

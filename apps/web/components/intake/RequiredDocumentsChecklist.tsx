@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { RequiredDocumentCategory, RequiredDocumentStatus } from "@prisma/client";
+import type {
+  RequiredDocumentCategory,
+  RequiredDocumentStatus,
+} from "@/types/intake-documents-client";
 
 const CATEGORY_ORDER: RequiredDocumentCategory[] = [
   "IDENTITY",

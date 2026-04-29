@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getDemoFlow, type DemoFlowStep } from "@/modules/growth/demo-flow";
 import { BROKER_DEMO_TOP_DEAL, type DemoDealRow } from "@/modules/growth/demo-sample-data";
-import type { PlatformRole } from "@prisma/client";
+import type { PlatformRole } from "@/types/platform-role";
 
 const SESSION_KEY = "lecipm_broker_demo_session_v1";
 

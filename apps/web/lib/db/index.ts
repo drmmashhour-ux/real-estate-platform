@@ -3,7 +3,12 @@
  * The process-wide `pg.Pool` is created only in {@link ./pool-core.ts} (not here).
  * App code should import from `@/lib/db` for pool + Prisma barrels. For optional no-DB guards, use `safeDbCall` / `isDbDisabled` from `@/lib/db-safe`; avoid ad-hoc `lib/db-direct`.
  */
+import "./db-entry-guard";
 import "server-only";
+
+if (typeof window !== "undefined") {
+  throw new Error("❌ DB imported in client bundle");
+}
 
 import type { Prisma } from "@prisma/client";
 import { coreDB } from "@repo/db-core";

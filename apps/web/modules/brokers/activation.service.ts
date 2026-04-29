@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "@/lib/db";
 import { sendBrokerAfterDemo } from "../lib/email/broker-outreach-emails";
 
 export type ActivationMilestone = "createdDraft" | "usedAI" | "completedDraft" | "firstPayment";

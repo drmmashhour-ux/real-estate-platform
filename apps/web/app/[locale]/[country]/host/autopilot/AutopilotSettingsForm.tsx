@@ -1,7 +1,7 @@
 "use client";
 
-import type { HostAutopilotSettings } from "@prisma/client";
-import { AutopilotMode } from "@prisma/client";
+import type { HostAutopilotSettingsView } from "@/types/host-autopilot-settings-client";
+import { AutopilotMode } from "@/types/host-autopilot-settings-client";
 import { useState } from "react";
 
 const GOLD = "#D4AF37";
@@ -17,7 +17,7 @@ const MODES: { value: AutopilotMode; label: string; hint: string }[] = [
   },
 ];
 
-export function AutopilotSettingsForm({ initial }: { initial: HostAutopilotSettings }) {
+export function AutopilotSettingsForm({ initial }: { initial: HostAutopilotSettingsView }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [form, setForm] = useState({

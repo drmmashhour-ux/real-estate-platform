@@ -24,7 +24,7 @@ import {
 import {
   parseSellerDeclarationAiReview,
   type SellerDeclarationAiReview,
-} from "@/lib/fsbo/seller-declaration-ai-review";
+} from "@/lib/fsbo/seller-declaration-ai-review.logic";
 import type { ListingAiScoresResult } from "@/lib/fsbo/listing-ai-scores";
 import { getFsboMaxPhotosForSellerPlan, type FsboPhotoType } from "@/lib/fsbo/photo-limits";
 import { ListingTrustGraphPanel } from "@/components/trust/ListingTrustGraphPanel";
@@ -169,6 +169,9 @@ export function SellerListingWizard({
   const [demoPhotoBusy, setDemoPhotoBusy] = useState<null | "seed" | "food">(null);
   const [photoDemoNotice, setPhotoDemoNotice] = useState<string | null>(null);
   const [prefilledFromPrevious, setPrefilledFromPrevious] = useState(false);
+  const [recommendedCoverIndex, setRecommendedCoverIndex] = useState<number | null>(null);
+  const [coverRankBusy, setCoverRankBusy] = useState(false);
+  const [captionGenBusy, setCaptionGenBusy] = useState(false);
 
   const load = useCallback(async (id: string) => {
     const res = await fetch(`/api/fsbo/listings/${id}`, { credentials: "same-origin" });

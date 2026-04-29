@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { CITY_SLUGS, type CitySlug } from "@/lib/geo/city-search";
-import { getSeoCityTelemetry, type SeoCityTelemetry } from "@/modules/seo-city/seo-city-pages.service";
-import { readSeoCityOverrides, writeSeoCityOverrideClient } from "@/modules/seo-city/seo-city-generator.service";
+import { getSeoCityTelemetry, type SeoCityTelemetry } from "@/modules/seo-city/seo-city-telemetry.client";
+import { readSeoCityOverrides, writeSeoCityOverrideClient } from "@/modules/seo-city/seo-city-local-overrides.client";
 
 type Props = { country: string; locale: string; base: string };
 

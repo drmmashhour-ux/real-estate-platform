@@ -41,7 +41,7 @@ import { DecisionScoreTerminalClient } from "@/components/decision-engine/Decisi
 import { buildDecisionSnapshotForListing } from "@/lib/decision-engine/buildDecisionSnapshot";
 import { calculateFraudScore } from "@/modules/fraud-risk/application/calculateFraudScore";
 import { declarationSectionCounts, migrateLegacySellerDeclaration, missingDeclarationSections } from "@/lib/fsbo/seller-declaration-schema";
-import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
+import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review.logic";
 import type { MissingItemRow } from "@/components/trust/MissingItemsList";
 import { getSellHubLegalChecklist } from "@/lib/fsbo/sell-hub-legal-checklist";
 import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";

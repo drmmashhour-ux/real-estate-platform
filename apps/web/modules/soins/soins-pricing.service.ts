@@ -1,4 +1,4 @@
-import type { CareLevel } from "@prisma/client";
+import type { CareLevel } from "@/types/soins-care-client";
 
 import {
   type MonthlyPricingInput,

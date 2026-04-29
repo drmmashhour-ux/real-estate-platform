@@ -1,6 +1,6 @@
-import type { HostLead } from "@prisma/client";
+import type { HostLeadRowView } from "@/types/host-lead-client";
 
-export function HostLeadTable({ rows }: { rows: Pick<HostLead, "id" | "email" | "phone" | "funnelStatus" | "source" | "city" | "createdAt">[] }) {
+export function HostLeadTable({ rows }: { rows: Pick<HostLeadRowView, "id" | "email" | "phone" | "funnelStatus" | "source" | "city" | "createdAt">[] }) {
   if (rows.length === 0) {
     return <p className="text-sm text-zinc-500">No host leads yet.</p>;
   }

@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { PrismaClient } from "@prisma/client";
 import { getOrCreateAssignmentForSurface } from "@/lib/experiments/get-assignment";
 import { parseVariantConfig, type ExperimentUiConfig } from "@/lib/experiments/validators";

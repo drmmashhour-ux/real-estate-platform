@@ -1,6 +1,6 @@
 "use client";
 
-import type { ListingMarketingDraft } from "@prisma/client";
+import type { ListingMarketingDraftView } from "@/types/listing-marketing-draft-client";
 
 export function MarketingDraftList({
   listingId,
@@ -11,7 +11,7 @@ export function MarketingDraftList({
   drafts: unknown[];
   onRefresh: () => Promise<void>;
 }) {
-  const rows = drafts as ListingMarketingDraft[];
+  const rows = drafts as ListingMarketingDraftView[];
 
   async function call(draftId: string, action: "approve" | "reject" | "schedule") {
     const res = await fetch(`/api/broker/listings/${listingId}/marketing-drafts/${draftId}/${action}`, {

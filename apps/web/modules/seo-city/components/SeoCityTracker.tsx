@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import { recordSeoCityPageView } from "../seo-city-pages.service";
+import { recordSeoCityPageView } from "@/modules/seo-city/seo-city-telemetry.client";
 
 type Props = { path?: string };
 

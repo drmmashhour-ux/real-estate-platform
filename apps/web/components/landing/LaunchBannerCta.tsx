@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import { trackEvent } from "@/src/services/analytics";
+import { trackEvent } from "@/src/modules/analytics/eventTracker";
 
 type Props = {
   href: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { ConversationType, MessageType } from "@prisma/client";
+import type { ConversationType, MessageType } from "@/types/messaging-client";
 import { MessageComposer } from "@/components/messaging/MessageComposer";
 import { VoiceMessageBubble } from "@/components/messaging/VoiceMessageBubble";
 import { isPublicDemoMode } from "@/lib/demo-mode";

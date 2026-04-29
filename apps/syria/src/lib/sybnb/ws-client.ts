@@ -36,7 +36,7 @@ export function connectSybnbWS(opts: ConnectSybnbWSOpts): () => void {
   if (typeof window === "undefined") return () => {};
 
   let socket: WebSocket | null = null;
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let reconnectTimer: number | null = null;
   let stopped = false;
 
   function clearReconnectTimer() {

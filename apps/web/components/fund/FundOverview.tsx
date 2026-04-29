@@ -1,5 +1,4 @@
 import React from "react";
-import { InvestmentFund } from "@prisma/client";
 
 export function FundOverview({ fund }: { fund: any }) {
   return (

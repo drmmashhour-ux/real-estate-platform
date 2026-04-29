@@ -12,12 +12,12 @@ import {
   ChevronRight,
   MessageSquare
 } from 'lucide-react';
-import { Button } from '../../../../components/ui/Button';
-import { Badge } from '../../../../components/ui/Badge';
-import { ReviewSection } from '../../../../components/bnhub/ReviewSection';
-import { TransparencyPanel } from '../../../../components/bnhub/TransparencyPanel';
-import { TrustBadge } from '../../../../components/bnhub/TrustBadge';
-import { calculateTrustScore } from '../../../../../modules/bnhub/trustEngine';
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { ReviewSection } from "@/components/bnhub/ReviewSection";
+import { TransparencyPanel } from "@/components/bnhub/TransparencyPanel";
+import { TrustBadge } from "@/components/bnhub/TrustBadge";
+import { calculateTrustScore } from "@/modules/bnhub/trustEngine";
 
 // Mock Data for a single listing
 const MOCK_LISTING = {

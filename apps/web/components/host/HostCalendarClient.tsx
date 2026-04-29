@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { BnhubChannelPlatform } from "@prisma/client";
+import type { BnhubChannelPlatform } from "@/types/bnhub-channel-client";
 import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
 import BnCalendar, { type BnCalendarEventInput } from "@/components/calendar/BnCalendar";
 import type {

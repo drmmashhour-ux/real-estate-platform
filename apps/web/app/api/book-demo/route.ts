@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@/lib/db";
 import { sendBrokerBookingConfirmation } from "../../../lib/email/broker-outreach-emails";
 
 export async function POST(req: NextRequest) {

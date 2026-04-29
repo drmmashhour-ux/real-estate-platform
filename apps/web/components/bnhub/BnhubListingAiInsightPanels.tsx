@@ -1,12 +1,12 @@
 import { Sparkles } from "lucide-react";
-import type { ListingIntelligenceSnapshot } from "@prisma/client";
+import type { ListingIntelligenceSnapshotView } from "@/types/bnhub-client-models";
 import { buildBnhubStayAiInsightPanels } from "@/lib/bnhub/bnhub-ai-panels-stay";
 import type { BnhubMarketInsightPayload } from "@/lib/bnhub/market-price-insight";
 
 type Props = {
   market: BnhubMarketInsightPayload;
   trustScore0to100: number;
-  snapshot: ListingIntelligenceSnapshot | null;
+  snapshot: ListingIntelligenceSnapshotView | null;
 };
 
 /** AI Market Insight + AI Investment Score for BNHub stay detail (light shell). */

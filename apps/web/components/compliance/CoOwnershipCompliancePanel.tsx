@@ -2,8 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import type { ComplianceChecklistItemStatus, ComplianceVerificationLevel } from "@prisma/client";
-import type { ChecklistItem } from "@prisma/client";
+import type {
+  ChecklistItemView,
+  ComplianceChecklistItemStatus,
+  ComplianceVerificationLevel,
+} from "@/types/checklist-coownership-client";
 import { 
   FileText, 
   ShieldCheck, 
@@ -21,7 +24,7 @@ export type CoOwnershipCompliancePayload = {
   listingType: string;
   isCoOwnership: boolean;
   items: Pick<
-    ChecklistItem,
+    ChecklistItemView,
     | "id"
     | "key"
     | "label"
@@ -56,8 +59,8 @@ type ApiResponse = CoOwnershipCompliancePayload & {
   listingId?: string;
   applicable?: boolean;
   categories?: {
-    coownership: { items: ChecklistItem[]; percent: number };
-    insurance: { items: ChecklistItem[]; percent: number };
+    coownership: { items: ChecklistItemView[]; percent: number };
+    insurance: { items: ChecklistItemView[]; percent: number };
   };
 };
 

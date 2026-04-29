@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import type { LecipmListingAssetType, LecipmListingCentrisPublicationState } from "@prisma/client";
+import type { LecipmListingAssetType, LecipmListingCentrisPublicationState } from "@/types/lecipm-listing-enums-client";
 import type { CoOwnershipCompliancePayload } from "@/components/compliance/CoOwnershipChecklist";
 import { CoOwnershipChecklist } from "@/components/compliance/CoOwnershipChecklist";
 import { ComplianceStatusBadge } from "@/components/compliance/ComplianceStatusBadge";

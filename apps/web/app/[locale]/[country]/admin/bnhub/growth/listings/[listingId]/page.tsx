@@ -8,7 +8,7 @@ import { listGrowthCampaigns } from "@/src/modules/bnhub-growth-engine/services/
 import { listLeadsByListing } from "@/src/modules/bnhub-growth-engine/services/leadEngineService";
 import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
-import type { ClassificationBreakdown } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
+import type { ClassificationBreakdown } from "@/types/bnhub-classification-client";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";

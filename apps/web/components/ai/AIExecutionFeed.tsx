@@ -1,6 +1,6 @@
-import type { ManagerAiAgentRun } from "@prisma/client";
+import type { ManagerAiAgentRunRow } from "@/types/manager-ai-agent-client";
 
-export function AIExecutionFeed({ runs }: { runs: Pick<ManagerAiAgentRun, "id" | "agentKey" | "status" | "createdAt" | "outputSummary">[] }) {
+export function AIExecutionFeed({ runs }: { runs: Pick<ManagerAiAgentRunRow, "id" | "agentKey" | "status" | "createdAt" | "outputSummary">[] }) {
   if (runs.length === 0) {
     return <p className="text-sm text-white/40">No recent executions.</p>;
   }

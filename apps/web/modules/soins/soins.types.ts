@@ -7,7 +7,7 @@ import type {
   CareService,
   CareServiceKind,
   FoodPlan,
-} from "@prisma/client";
+} from "@/types/soins-care-client";
 
 export type {
   CareFoodPlanTier,
@@ -17,6 +17,7 @@ export type {
   CareResidenceType,
   CareServiceKind,
 };
+export type { CareService, FoodPlan };
 
 /** Monotonic rank for care tier comparisons (pricing + service eligibility). */
 export const CARE_LEVEL_RANK: Record<CareLevel, number> = {

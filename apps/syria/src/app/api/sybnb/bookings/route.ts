@@ -5,7 +5,9 @@ import { logSybnbEvent } from "@/lib/sybnb/sybnb-audit";
 import { getSessionUser } from "@/lib/auth";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { broadcastSybnbBookingUpdated } from "@/lib/realtime/sybnb-broadcast";
 import { s2GetClientIp } from "@/lib/security/s2-ip";
+import { SYBNB_SYNC_LEGACY_CLIENT_ID } from "@/lib/sybnb/sybnb-sync-constants";
 import { NextRequest } from "next/server";
 
 /**
@@ -71,11 +73,17 @@ export async function POST(req: NextRequest): Promise<Response> {
     return sybnbFail(firstZodIssueMessage(parsed.error), 400);
   }
 
-  const { listingId, checkIn, checkOut, guests, clientRequestId } = parsed.data;
+  const { listingId, checkIn, checkOut, guests, clientRequestId, clientId } = parsed.data;
+  const deviceId = clientId?.trim() || SYBNB_SYNC_LEGACY_CLIENT_ID;
 
   if (clientRequestId) {
     const hit = await prisma.sybnbSyncIdempotency.findUnique({
-      where: { clientRequestId },
+      where: {
+        clientRequestId_clientId: {
+          clientRequestId,
+          clientId: deviceId,
+        },
+      },
       select: { userId: true, kind: true, bookingId: true },
     });
     if (hit && hit.kind === "booking_request" && hit.userId === user.id) {

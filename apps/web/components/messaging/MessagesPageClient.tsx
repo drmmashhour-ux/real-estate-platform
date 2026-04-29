@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { PlatformRole } from "@prisma/client";
+import type { PlatformRole } from "@/types/platform-role";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ConversationThread, type ThreadDetail, type ThreadMessage } from "@/components/messaging/ConversationThread";
 import { AiSuggestReplyBar } from "@/components/messaging/AiSuggestReplyBar";

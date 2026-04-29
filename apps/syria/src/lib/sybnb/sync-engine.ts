@@ -310,6 +310,7 @@ export async function runSync(opts?: RunSyncOptions): Promise<{ processed: numbe
       onPhase?.("synced");
       onSynced?.();
       if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("sybnb-sync-success"));
         window.setTimeout(() => {
           onPhase?.(remaining > 0 ? "pending" : "idle");
         }, 1200);

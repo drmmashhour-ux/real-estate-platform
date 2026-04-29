@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { BnhubGrowthAutonomyLevel, BnhubGrowthCampaignObjective, BnhubGrowthCampaignType } from "@prisma/client";
+import type {
+  BnhubGrowthAutonomyLevel,
+  BnhubGrowthCampaignObjective,
+  BnhubGrowthCampaignType,
+} from "@/types/bnhub-client-models";
 import { g } from "./growth-ui-classes";
 
 type ListingOpt = { id: string; title: string; city: string | null };

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { ComplianceCase, ComplianceFinding } from "@prisma/client";
+import type { ComplianceCaseView, ComplianceFindingView } from "@/types/compliance-cases-client";
 import { ComplianceCaseCard } from "./ComplianceCaseCard";
 import { ComplianceFindingPanel } from "./ComplianceFindingPanel";
 
-type CaseRow = ComplianceCase & {
-  complianceFindings: ComplianceFinding[];
+type CaseRow = ComplianceCaseView & {
+  complianceFindings: ComplianceFindingView[];
   deal: { id: string; dealCode: string | null; status: string; brokerId: string | null } | null;
 };
 

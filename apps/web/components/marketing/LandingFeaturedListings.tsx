@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ListingStatus, type Prisma } from "@prisma/client";
+import { ListingStatus } from "@/types/listing-status-client";
 import { prisma } from "@/lib/db";
 
 const featuredListingSelect = {
@@ -11,9 +11,18 @@ const featuredListingSelect = {
   bedrooms: true,
   beds: true,
   baths: true,
-} satisfies Prisma.ShortTermListingSelect;
+} as const;
 
-type FeaturedListingRow = Prisma.ShortTermListingGetPayload<{ select: typeof featuredListingSelect }>;
+type FeaturedListingRow = {
+  id: string;
+  city: string | null;
+  nightPriceCents: number;
+  currency: string;
+  photos: unknown;
+  bedrooms: number | null;
+  beds: number;
+  baths: number;
+};
 
 const fmt = (cents: number, currency: string) => {
   const amount = cents / 100;

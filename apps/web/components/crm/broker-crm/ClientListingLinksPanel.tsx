@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import type { BrokerClientListingKind } from "@prisma/client";
+import type { BrokerClientListingKind } from "@/types/broker-crm-client";
 
 type Row = {
   id: string;

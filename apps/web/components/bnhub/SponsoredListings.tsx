@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ListingCodeBadge } from "@/components/bnhub/ListingCodeBadge";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { prisma } from "@/lib/db";
-import { ListingStatus, VerificationStatus } from "@prisma/client";
+import { ListingStatus } from "@/types/listing-status-client";
+import { VerificationStatus } from "@/types/verification-status-client";
 import { VerifiedListingBadge } from "@/components/listings/VerifiedListingBadge";
 
 function photoFirst(photos: unknown): string | null {

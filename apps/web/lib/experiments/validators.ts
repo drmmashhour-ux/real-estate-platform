@@ -1,3 +1,5 @@
+import "server-only";
+
 import { z } from "zod";
 import { EXPERIMENT_EVENT_NAMES } from "@/lib/experiments/constants";
 

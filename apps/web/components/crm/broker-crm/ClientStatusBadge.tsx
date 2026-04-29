@@ -1,4 +1,4 @@
-import type { BrokerClientStatus } from "@prisma/client";
+import type { BrokerClientStatus } from "@/types/broker-crm-client";
 
 const STYLE: Record<BrokerClientStatus, string> = {
   LEAD: "border-slate-500/40 bg-slate-500/15 text-slate-200",

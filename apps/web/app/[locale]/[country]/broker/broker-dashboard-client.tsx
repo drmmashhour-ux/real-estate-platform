@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatCurrencyCAD } from "@/lib/investment/format";
 import { useToast } from "@/components/ui/ToastProvider";
-import { FREE_BROKER_VISIBLE_LEADS } from "@/modules/mortgage/services/broker-lead-limits";
+import { FREE_BROKER_VISIBLE_LEADS } from "@/modules/mortgage/services/broker-lead-tier.constants";
 import type { BrokerLeadRow } from "@/modules/mortgage/services/map-broker-lead";
 import { PreApprovalEstimateCard } from "@/components/mortgage/PreApprovalEstimateCard";
 

@@ -1,4 +1,4 @@
-import type { BnhubCampaignDistribution, BnhubDistributionChannel } from "@prisma/client";
+import type { BnhubDistributionRowView } from "@/types/bnhub-client-models";
 import { ChannelBadge } from "./ChannelBadge";
 import { m } from "./marketing-ui-classes";
 
@@ -14,7 +14,7 @@ const STATUS_COLOR: Record<string, string> = {
 export function DistributionTimeline({
   rows,
 }: {
-  rows: (BnhubCampaignDistribution & { channel: BnhubDistributionChannel })[];
+  rows: BnhubDistributionRowView[];
 }) {
   if (rows.length === 0) {
     return (

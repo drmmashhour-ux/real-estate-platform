@@ -1,4 +1,4 @@
-import type { LecipmTrustOperationalBand } from "@prisma/client";
+import type { LecipmTrustOperationalBand } from "@/types/trust-enums-client";
 
 const STYLES: Record<LecipmTrustOperationalBand, string> = {
   HIGH_TRUST: "border-emerald-500/50 bg-emerald-950/40 text-emerald-100",

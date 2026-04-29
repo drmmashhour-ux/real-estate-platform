@@ -6,7 +6,7 @@ import type {
   ListingAcquisitionIntakeStatus,
   ListingAcquisitionPermissionStatus,
   ListingAcquisitionSourceType,
-} from "@prisma/client";
+} from "@/types/listing-acquisition-enums-client";
 import { ACQUISITION_COLUMN_LABELS, ACQUISITION_PIPELINE_COLUMNS } from "@/lib/listing-acquisition/constants";
 
 type LeadRow = {

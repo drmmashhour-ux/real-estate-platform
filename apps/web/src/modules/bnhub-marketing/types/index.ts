@@ -1,14 +1,11 @@
 import type {
+  BnhubDistributionRowView,
+  BnhubListingMarketingProfile,
   BnhubMarketingAsset,
-  BnhubMarketingCampaign,
   BnhubMarketingCampaignObjective,
   BnhubMarketingCampaignStatus,
-  BnhubCampaignDistribution,
-  BnhubDistributionChannel,
-  BnhubListingMarketingProfile,
   BnhubMarketingRecommendation,
-  BnhubMarketingEvent,
-} from "@prisma/client";
+} from "@/types/bnhub-client-models";
 
 export type MarketingOverviewResponse = {
   totalCampaigns: number;
@@ -26,7 +23,11 @@ export type MarketingOverviewResponse = {
   labels: { reach: string; bookings: string };
 };
 
-export type CampaignListRow = BnhubMarketingCampaign & {
+export type CampaignListRow = {
+  id: string;
+  campaignName: string;
+  status: BnhubMarketingCampaignStatus;
+  objective?: BnhubMarketingCampaignObjective | null;
   listing: {
     id: string;
     title: string;
@@ -36,7 +37,19 @@ export type CampaignListRow = BnhubMarketingCampaign & {
   };
 };
 
-export type CampaignDetail = BnhubMarketingCampaign & {
+/** API campaign detail bundle for host/admin marketing UX (no `@prisma/client`). */
+export type BnhubMarketingEventView = {
+  id: string;
+  eventType: string;
+  createdAt?: Date | string | null;
+  payload?: unknown;
+};
+
+export type CampaignDetail = {
+  id: string;
+  campaignName: string;
+  objective: BnhubMarketingCampaignObjective | null;
+  status: BnhubMarketingCampaignStatus;
   listing: {
     id: string;
     title: string;
@@ -47,9 +60,9 @@ export type CampaignDetail = BnhubMarketingCampaign & {
     ownerId: string;
   };
   assets: BnhubMarketingAsset[];
-  distributions: (BnhubCampaignDistribution & { channel: BnhubDistributionChannel })[];
+  distributions: BnhubDistributionRowView[];
   recommendations: BnhubMarketingRecommendation[];
-  events: BnhubMarketingEvent[];
+  events: BnhubMarketingEventView[];
 };
 
 export type ListingMarketingBundle = {

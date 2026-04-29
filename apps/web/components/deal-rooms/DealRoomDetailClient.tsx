@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import type { DealDocumentStatus, DealPaymentStatus, DealRoomStage, DealTaskStatus } from "@prisma/client";
+import type {
+  DealDocumentStatus,
+  DealPaymentStatus,
+  DealPriorityLabel,
+  DealRoomStage,
+  DealTaskStatus,
+} from "@/types/deal-room-enums";
 import { PriorityBadge, StageBadge, stageLabel } from "./deal-room-ui";
 
 type Insight = { kind: string; title: string; detail: string };
@@ -29,7 +35,7 @@ export function DealRoomDetailClient({
   const room = initial.room as {
     id: string;
     stage: DealRoomStage;
-    priorityLabel: import("@prisma/client").DealPriorityLabel;
+    priorityLabel: DealPriorityLabel;
     summary: string | null;
     nextAction: string | null;
     nextFollowUpAt: string | null;

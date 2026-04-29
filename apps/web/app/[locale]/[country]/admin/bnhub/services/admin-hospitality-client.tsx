@@ -1,22 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import type { BnhubService } from "@prisma/client";
+import type { BnhubServiceAdminRow } from "@/types/bnhub-service-admin-client";
 
-export function AdminHospitalityClient({ initialServices }: { initialServices: BnhubService[] }) {
+export function AdminHospitalityClient({ initialServices }: { initialServices: BnhubServiceAdminRow[] }) {
   const [services, setServices] = useState(initialServices);
   const [listingServiceId, setListingServiceId] = useState("");
   const [restrict, setRestrict] = useState(true);
   const [msg, setMsg] = useState("");
 
-  async function patchCatalog(s: BnhubService, patch: Partial<BnhubService>) {
+  async function patchCatalog(s: BnhubServiceAdminRow, patch: Partial<BnhubServiceAdminRow>) {
     setMsg("");
     const r = await fetch("/api/admin/bnhub/hospitality/catalog", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: s.id, ...patch }),
     });
-    const j = (await r.json()) as { service?: BnhubService; error?: string };
+    const j = (await r.json()) as { service?: BnhubServiceAdminRow; error?: string };
     if (!r.ok) {
       setMsg(j.error ?? "Failed");
       return;

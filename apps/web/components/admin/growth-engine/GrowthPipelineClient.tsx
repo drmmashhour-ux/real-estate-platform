@@ -1,6 +1,6 @@
 "use client";
 
-import type { GrowthEngineLead } from "@prisma/client";
+import type { SerializedGrowthLead } from "@/types/growth-engine-lead-client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
@@ -11,6 +11,8 @@ import {
 } from "@/lib/growth/templates";
 import type { GrowthEngineDashboardMetrics } from "@/lib/growth/metrics";
 
+export type { SerializedGrowthLead };
+
 const PIPELINE_STAGES = ["new", "contacted", "interested", "awaiting_assets", "converted"] as const;
 type PipelineStage = (typeof PIPELINE_STAGES)[number];
 
@@ -20,17 +22,6 @@ const STAGE_LABEL: Record<PipelineStage, string> = {
   interested: "Interested",
   awaiting_assets: "Awaiting assets",
   converted: "Converted",
-};
-
-export type SerializedGrowthLead = Omit<
-  GrowthEngineLead,
-  "createdAt" | "updatedAt" | "lastContactAt" | "consentAt" | "archivedAt"
-> & {
-  createdAt: string;
-  updatedAt: string;
-  lastContactAt: string | null;
-  consentAt: string | null;
-  archivedAt: string | null;
 };
 
 type LeadRow = SerializedGrowthLead;

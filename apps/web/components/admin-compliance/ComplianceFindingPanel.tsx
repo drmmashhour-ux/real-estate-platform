@@ -1,7 +1,7 @@
-import type { ComplianceCase, ComplianceFinding } from "@prisma/client";
+import type { ComplianceCaseView, ComplianceFindingView } from "@/types/compliance-cases-client";
 
-type CaseRow = ComplianceCase & {
-  complianceFindings: ComplianceFinding[];
+type CaseRow = ComplianceCaseView & {
+  complianceFindings: ComplianceFindingView[];
   deal: { id: string; dealCode: string | null; status: string; brokerId: string | null } | null;
 };
 

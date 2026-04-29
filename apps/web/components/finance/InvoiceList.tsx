@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { TenantInvoiceStatus } from "@prisma/client";
+import type { TenantInvoiceStatus } from "@/types/tenancy-finance-enums-client";
 
 export type InvoiceListItem = {
   id: string;

@@ -1,4 +1,4 @@
-import type { ClientIntakeEventType } from "@prisma/client";
+import type { ClientIntakeEventType } from "@/types/intake-documents-client";
 
 export type TimelineRow = {
   id: string;

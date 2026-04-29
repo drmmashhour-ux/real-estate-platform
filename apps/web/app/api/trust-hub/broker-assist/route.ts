@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/db";
 import { generateBrokerAssistReason } from "../../../../modules/quebec-trust-hub/brokerAssistRouter";
 import { logTrustHubEvent } from "../../../../modules/quebec-trust-hub/trustHubAuditLogger";
 

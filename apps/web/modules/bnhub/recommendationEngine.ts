@@ -259,3 +259,69 @@ export function bnhubAutopilotPromotionIdeas(): string[] {
     "Run a 3-night minimum on weekends if cleaning turnover is tight — protects margin.",
   ];
 }
+
+/** --- Guest search / marketing UI (mock ranking) — additive surface for BNHub pages. */
+
+export type Listing = {
+  id: string;
+  name: string;
+  price: number;
+  rating: number;
+  location: string;
+  amenities: string[];
+  features: string[];
+};
+
+export type RecommendationTag = "VALUE" | "RATING" | "LOCATION" | "MATCH";
+
+export type RecommendationResult = {
+  listing: Listing;
+  tag: RecommendationTag;
+  reason: string;
+};
+
+export type GuestSearchPrefs = {
+  city?: string;
+  maxPrice?: number;
+  essentialAmenities?: string[];
+  historyTags?: string[];
+};
+
+function tagForIndex(i: number): RecommendationTag {
+  const tags: RecommendationTag[] = ["VALUE", "RATING", "LOCATION"];
+  return tags[i % tags.length];
+}
+
+export function getRecommendedListings(listings: Listing[], prefs: GuestSearchPrefs): RecommendationResult[] {
+  const cityNeedle = (prefs.city ?? "").trim().toLowerCase();
+  const maxPrice =
+    prefs.maxPrice != null && prefs.maxPrice > 0 ? prefs.maxPrice : Number.POSITIVE_INFINITY;
+  const ami = (prefs.essentialAmenities ?? []).map((a) => a.toLowerCase());
+  const tags = (prefs.historyTags ?? []).map((t) => t.toLowerCase());
+
+  function scoreListing(l: Listing): number {
+    let s = l.rating * 18 + Math.max(0, 420 - l.price) / 60;
+    if (cityNeedle && l.location.toLowerCase().includes(cityNeedle)) s += 12;
+    if (l.price <= maxPrice) s += 8;
+    for (const a of ami) {
+      if (l.amenities.some((x) => x.toLowerCase().includes(a))) s += 4;
+    }
+    for (const t of tags) {
+      if (l.features.some((f) => f.toLowerCase().includes(t))) s += 3;
+    }
+    return s;
+  }
+
+  const ranked = [...listings].sort((a, b) => scoreListing(b) - scoreListing(a));
+  const top = ranked.slice(0, 3);
+  const reasons = [
+    "Strong nightly rate vs rating in this corridor (illustrative).",
+    "Amenity mix matches frequent guest filters.",
+    "Location clustering aligns with your search intent.",
+  ];
+  return top.map((listing, idx) => ({
+    listing,
+    tag: tagForIndex(idx),
+    reason: reasons[idx % reasons.length] ?? reasons[0]!,
+  }));
+}

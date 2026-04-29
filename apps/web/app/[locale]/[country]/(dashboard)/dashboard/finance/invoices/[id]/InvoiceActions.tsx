@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { TenantInvoiceStatus } from "@prisma/client";
+import type { TenantInvoiceStatus } from "@/types/tenancy-finance-enums-client";
 
 export function InvoiceActions(props: { invoiceId: string; status: TenantInvoiceStatus }) {
   const router = useRouter();

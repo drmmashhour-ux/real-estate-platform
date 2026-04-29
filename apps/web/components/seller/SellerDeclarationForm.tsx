@@ -29,7 +29,7 @@ import { SellerTaxesAssistantPanel } from "@/components/seller/SellerTaxesAssist
 import { ListingAiScoresCard } from "@/components/seller/ListingAiScoresCard";
 import { SellerDeclarationReadiness } from "@/components/legal/SellerDeclarationReadiness";
 import { DECLARATION_SECTION_LABELS } from "@/components/seller/SellerChecklistIndex";
-import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
+import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review.logic";
 import type { ListingAiScoresResult } from "@/lib/fsbo/listing-ai-scores";
 import {
   validateSellerDeclarationIntegrity,

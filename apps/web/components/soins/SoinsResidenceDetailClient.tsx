@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CareFoodPlanTier, CareLevel, CareResidenceType } from "@prisma/client";
+import type {
+  CareFoodPlanTier,
+  CareLevel,
+  CareResidenceType,
+} from "@/types/soins-care-client";
 
 import { PricingCalculator } from "@/components/soins/PricingCalculator";
 

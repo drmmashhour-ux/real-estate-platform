@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { getApiSnapshot, putApiSnapshot } from "@repo/offline";
 import { SYRIA_OFFLINE_NAMESPACE } from "@/lib/offline/constants";
 import type { LiteBookingRow } from "@/lib/lite/lite-queries";
 import { liteBookingsSnapshotKey } from "@/lib/lite/lite-cache-keys";
+import { useSybnbSync } from "@/components/sybnb/SybnbSyncProvider";
 
 export function LiteBookingsClient(props: { initial: LiteBookingRow[]; locale: string; authenticated: boolean }) {
   const { initial, locale, authenticated } = props;
   const t = useTranslations("UltraLite");
+  const { subscribeRefresh } = useSybnbSync();
   const [rows, setRows] = useState<LiteBookingRow[]>(initial);
   const [src, setSrc] = useState<"server" | "cache" | "network">("server");
 
@@ -24,19 +26,27 @@ export function LiteBookingsClient(props: { initial: LiteBookingRow[]; locale: s
     })();
   }, [locale]);
 
-  useEffect(() => {
-    void (async () => {
-      if (!authenticated) return;
-      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
-      const res = await fetch(`/api/lite/bookings?locale=${encodeURIComponent(locale)}`, { cache: "no-store" });
-      const j = (await res.json().catch(() => ({}))) as { items?: LiteBookingRow[] };
-      if (j.items) {
-        setRows(j.items);
-        setSrc("network");
-        await putApiSnapshot(SYRIA_OFFLINE_NAMESPACE, liteBookingsSnapshotKey(locale), j.items);
-      }
-    })();
+  const refetchBookings = useCallback(async () => {
+    if (!authenticated) return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    const res = await fetch(`/api/lite/bookings?locale=${encodeURIComponent(locale)}`, { cache: "no-store" });
+    const j = (await res.json().catch(() => ({}))) as { items?: LiteBookingRow[] };
+    if (j.items) {
+      setRows(j.items);
+      setSrc("network");
+      await putApiSnapshot(SYRIA_OFFLINE_NAMESPACE, liteBookingsSnapshotKey(locale), j.items);
+    }
   }, [locale, authenticated]);
+
+  useEffect(() => {
+    void refetchBookings();
+  }, [refetchBookings]);
+
+  useEffect(() => {
+    return subscribeRefresh(() => {
+      void refetchBookings();
+    });
+  }, [subscribeRefresh, refetchBookings]);
 
   if (!authenticated) {
     return <p className="text-neutral-700">{t("signInForRequests")}</p>;

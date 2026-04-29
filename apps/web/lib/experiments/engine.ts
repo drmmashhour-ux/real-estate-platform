@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getLegacyDB } from "@/lib/db/legacy";
 import { flags } from "@/lib/flags";
 import { ExperimentStatus, Prisma } from "@prisma/client";

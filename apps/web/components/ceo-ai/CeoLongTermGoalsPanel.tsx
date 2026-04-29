@@ -1,9 +1,9 @@
 "use client";
 import React from "react";
 import { Target, Flag, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/Badge";
 
 interface CeoLongTermGoalsPanelProps {
   goals: any[];

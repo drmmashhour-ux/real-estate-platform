@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SellerSupportingDocumentCategory, SellerSupportingDocumentStatus } from "@prisma/client";
+import type {
+  SellerSupportingDocumentCategory,
+  SellerSupportingDocumentStatus,
+} from "@/types/seller-supporting-doc-client";
 import {
   DECLARATION_SECTION_LINK_OPTIONS,
   SELLER_DOCUMENT_CATEGORY_LABELS,

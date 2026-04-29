@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PrivacyPurpose } from "@prisma/client";
+import type { PrivacyPurpose } from "@/types/privacy-purpose-client";
 
 interface TransactionPrivacyPanelProps {
   transactionId: string;

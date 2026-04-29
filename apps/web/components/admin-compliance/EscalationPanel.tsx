@@ -1,8 +1,6 @@
-import type { ComplianceCase, ComplianceEscalation } from "@prisma/client";
+import type { ComplianceEscalationView } from "@/types/compliance-cases-client";
 
-type Row = ComplianceEscalation & {
-  complianceCase: Pick<ComplianceCase, "id" | "summary" | "severity" | "dealId" | "status">;
-};
+type Row = ComplianceEscalationView;
 
 export function EscalationPanel({ rows }: { rows: Row[] }) {
   return (

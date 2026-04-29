@@ -1,8 +1,8 @@
 import { publicDemandLabel, publicValueLabel } from "@/lib/ai/intelligence/buildExplanation";
-import type { ListingIntelligenceSnapshot } from "@prisma/client";
+import type { ListingIntelligenceSnapshotView } from "@/types/bnhub-client-models";
 
 type Props = {
-  snapshot: ListingIntelligenceSnapshot | null;
+  snapshot: ListingIntelligenceSnapshotView | null;
 };
 
 /**

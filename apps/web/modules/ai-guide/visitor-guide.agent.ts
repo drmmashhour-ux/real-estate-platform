@@ -59,7 +59,7 @@ Every reply MUST use exactly three short parts, in order, separated by a blank l
 
 // —— Phase 8: CTA rotation —— //
 
-const CTA_LINES = [
+export const CTA_LINES = [
   "Want to try it with real leads?",
   "Want to see your top deals first?",
   "Start with one lead and see the difference.",
@@ -289,5 +289,3 @@ export function getConversionCtaMessage(surface: VisitorGuideSurface, turnIndex 
       `${pickRotatedCta(turnIndex)} Create a broker account when you are ready and connect one real file.`
     : `${pickRotatedCta(turnIndex)} Open your top-priority item in the app and follow the suggested next step.`;
 }
-
-export { pickRotatedCta, CTA_LINES };

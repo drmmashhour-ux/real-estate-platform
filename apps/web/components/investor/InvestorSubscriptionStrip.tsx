@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SubscriptionStatus } from "@prisma/client";
+import { SubscriptionStatus } from "@/types/subscription-status-client";
 import { getGuestId } from "@/lib/auth/session";
 import { getLecipmUserSubscriptionSnapshot } from "@/modules/revenue/lecipm-subscription-snapshot.service";
 

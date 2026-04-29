@@ -11,7 +11,7 @@ import {
   objection_price,
   show_lead_invite,
 } from "@/modules/growth/broker-close-scripts";
-import { BROKER_PROSPECT_STATUSES } from "@/modules/growth/broker-prospect.service";
+import { BROKER_PROSPECT_STATUSES } from "@/modules/growth/broker-prospect.constants";
 
 type Prospect = {
   id: string;

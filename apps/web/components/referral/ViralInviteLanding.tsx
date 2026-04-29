@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { VIRAL_REF_COOKIE, VIRAL_REF_COOKIE_MAX_AGE } from "@/lib/referrals/viral";
+import { VIRAL_REF_COOKIE, VIRAL_REF_COOKIE_MAX_AGE } from "@/lib/referrals/viral.constants";
 
 type Props = {
   /** Raw `?ref=` (user id or referral code) — stored for signup. */

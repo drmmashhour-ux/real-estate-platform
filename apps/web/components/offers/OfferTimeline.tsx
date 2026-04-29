@@ -1,6 +1,6 @@
 "use client";
 
-import type { OfferEvent, OfferEventType } from "@prisma/client";
+import type { OfferEventRow, OfferEventType } from "@/types/offers-client";
 
 const LABELS: Partial<Record<OfferEventType, string>> & Record<string, string> = {
   CREATED: "Created",
@@ -14,7 +14,7 @@ const LABELS: Partial<Record<OfferEventType, string>> & Record<string, string> =
 };
 
 type Props = {
-  events: Pick<OfferEvent, "id" | "type" | "message" | "createdAt" | "metadata">[];
+  events: Array<Pick<OfferEventRow, "id" | "type" | "message" | "createdAt" | "metadata">>;
 };
 
 export function OfferTimeline({ events }: Props) {

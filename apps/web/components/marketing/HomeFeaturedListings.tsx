@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ListingStatus, type Prisma } from "@prisma/client";
+import { ListingStatus } from "@/types/listing-status-client";
 import { prisma } from "@/lib/db";
 import { getHomepageFeaturedWinnerIds } from "@/lib/bnhub/featured-home-winners";
 
@@ -16,9 +16,18 @@ const select = {
   nightPriceCents: true,
   currency: true,
   photos: true,
-} satisfies Prisma.ShortTermListingSelect;
+} as const;
 
-type Row = Prisma.ShortTermListingGetPayload<{ select: typeof select }>;
+type Row = {
+  id: string;
+  listingCode: string | null;
+  city: string;
+  region: string | null;
+  province: string | null;
+  nightPriceCents: number;
+  currency: string;
+  photos: unknown;
+};
 
 function fmt(cents: number, currency: string) {
   const amount = cents / 100;

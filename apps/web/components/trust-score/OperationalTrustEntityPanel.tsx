@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import type { LecipmTrustEngineTargetType, LecipmTrustOperationalBand } from "@prisma/client";
+import type {
+  LecipmTrustEngineTargetType,
+  LecipmTrustOperationalBand,
+} from "@/types/trust-enums-client";
 
 import { TrustFactorList } from "./TrustFactorList";
 import { TrustHistoryChart, type TrustHistoryChartPoint } from "./TrustHistoryChart";

@@ -5,7 +5,7 @@ import { BookingCalendar } from "@/src/modules/bnhub/ui/BookingCalendar";
 import { BookingFlow } from "@/src/modules/bnhub/ui/BookingFlow";
 import { ReviewSection } from "@/src/modules/bnhub/ui/ReviewSection";
 import { BNHubStarRatingDisplay } from "@/components/bnhub/BNHubStarRatingDisplay";
-import type { ClassificationBreakdownCore } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
+import type { ClassificationBreakdownCore } from "@/types/bnhub-classification-client";
 import { recomputePropertyClassificationForListing } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
 
 export async function BNHubPropertyPage({ listingId }: { listingId: string }) {

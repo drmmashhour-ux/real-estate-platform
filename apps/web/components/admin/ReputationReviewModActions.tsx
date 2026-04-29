@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ReviewStatus } from "@prisma/client";
+import type { ReviewStatus } from "@/types/admin-reputation-client";
 
 const STATUSES: ReviewStatus[] = ["pending", "published", "hidden", "flagged"];
 

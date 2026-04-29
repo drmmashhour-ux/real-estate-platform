@@ -1,4 +1,3 @@
-import { HubLayout } from "@/components/layout/HubLayout";
 import { CapitalDashboardClient } from "./CapitalDashboardClient";
 
 export const metadata = {
@@ -7,8 +6,8 @@ export const metadata = {
 
 export default function CapitalDashboardPage() {
   return (
-    <HubLayout activeSection="CAPITAL">
+    <div className="mx-auto max-w-6xl p-6">
       <CapitalDashboardClient />
-    </HubLayout>
+    </div>
   );
 }

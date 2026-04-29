@@ -3,9 +3,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
-import type { LecipmAutonomousExecutionMode, LecipmExecutionTask } from "@prisma/client";
+import type { LecipmAutonomousExecutionMode, LecipmExecutionTaskView } from "@/types/execution-enums-client";
 
-type TaskRow = LecipmExecutionTask & {
+type TaskRow = LecipmExecutionTaskView & {
   actionLogs: Array<{ id: string; action: string; createdAt: string; resultJson: unknown }>;
 };
 

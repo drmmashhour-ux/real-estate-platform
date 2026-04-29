@@ -1,6 +1,6 @@
 "use client";
 
-import type { DealPriorityLabel, DealRoomStage } from "@prisma/client";
+import type { DealPriorityLabel, DealRoomStage } from "@/types/deal-room-enums";
 
 const STAGE_ORDER: DealRoomStage[] = [
   "new_interest",

@@ -31,7 +31,7 @@ import { LegalActionWarningModal } from "@/components/legal/LegalActionWarningMo
 import { CONTENT_LICENSE_ERROR } from "@/lib/legal/content-license-client";
 import { CONTENT_LICENSE_VERSION } from "@/modules/legal/content-license";
 import { trackImmoContactClient } from "@/lib/immo/track-client";
-import { ImmoContactEventType } from "@prisma/client";
+import { ImmoContactEventType } from "@/types/immo-contact-events";
 import { LEGAL_FORM_KEYS } from "@/modules/legal/legal-engine";
 import { INSURANCE_LEAD_CONSENT_LABEL } from "@/lib/insurance/consent-text";
 import { BuyerPropertyAiCards } from "@/components/ai/BuyerPropertyAiCards";

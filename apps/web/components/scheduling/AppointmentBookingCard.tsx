@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { AppointmentType, MeetingMode } from "@prisma/client";
+import type { AppointmentType, MeetingMode } from "@/types/scheduling-client";
 import { SchedulingDemoDisclaimer, SchedulingLegalCopy } from "@/components/scheduling/SchedulingStagingCopy";
 
 type Slot = { start: string; end: string };

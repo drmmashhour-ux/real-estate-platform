@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { VerificationStatus } from "@prisma/client";
+import { VerificationStatus } from "@/types/verification-status-client";
 import { EarlyAccessBanner } from "@/components/bnhub/EarlyAccessBanner";
 import { ListingActivitySignals } from "@/components/bnhub/ListingActivitySignals";
 import { ListingBadges, deriveBnhubListingBadges } from "@/components/bnhub/ListingBadges";

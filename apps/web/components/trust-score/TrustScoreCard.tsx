@@ -1,4 +1,4 @@
-import type { LecipmTrustOperationalBand } from "@prisma/client";
+import type { LecipmTrustOperationalBand } from "@/types/trust-enums-client";
 
 import { TrustBandBadge } from "./TrustBandBadge";
 

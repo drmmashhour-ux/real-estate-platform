@@ -1,4 +1,4 @@
-import type { BrokerTeam, BrokerTeamMember } from "@prisma/client";
+import type { BrokerTeamView, BrokerTeamMemberView } from "@/types/broker-team-client";
 import Link from "next/link";
 import { TeamMemberCard } from "./TeamMemberCard";
 import { TeamActivityFeed } from "./TeamActivityFeed";
@@ -8,7 +8,7 @@ export function TeamWorkspace({
   teams,
 }: {
   basePath: string;
-  teams: (BrokerTeam & { members: BrokerTeamMember[] })[];
+  teams: (BrokerTeamView)[];
 }) {
   if (teams.length === 0) {
     return (

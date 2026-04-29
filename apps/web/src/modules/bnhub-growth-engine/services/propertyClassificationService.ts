@@ -24,23 +24,10 @@ export type ListingForClassification = {
   listingPhotoUrls?: string[];
 };
 
-export type ClassificationBreakdownCore = {
-  label: string;
-  amenities: { earned: number; max: number; items: Record<string, boolean> };
-  comfort: { earned: number; max: number; items: Record<string, boolean> };
-  services: { earned: number; max: number; items: Record<string, boolean> };
-  safety: { earned: number; max: number; items: Record<string, boolean> };
-  completeness: { earned: number; max: number; items: Record<string, boolean> };
-  luxury: { earned: number; max: number; items: Record<string, boolean> };
-  aiAdjustment: { value: number; signals: string[] };
-  baseScore: number;
-  overallScore: number;
-  starRating: number;
-};
-
-export type ClassificationBreakdown = ClassificationBreakdownCore & {
-  improvementSuggestions: string[];
-};
+export type {
+  ClassificationBreakdown,
+  ClassificationBreakdownCore,
+} from "@/types/bnhub-classification-client";
 
 function jsonStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];

@@ -21,12 +21,12 @@ import {
   Search,
   ChevronRight
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { HostStatsCard } from '../../../components/bnhub/HostStatsCard';
-import { HostInsights } from '../../../components/bnhub/HostInsights';
-import { SmartPricingCard } from '../../../components/bnhub/SmartPricingCard';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { HostStatsCard } from "@/components/bnhub/HostStatsCard";
+import { HostInsights } from "@/components/bnhub/HostInsights";
+import { SmartPricingCard } from "@/components/bnhub/SmartPricingCard";
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(' ');

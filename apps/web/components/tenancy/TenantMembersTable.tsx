@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TENANT_ROLE_LABELS } from "@/modules/tenancy/constants";
-import type { TenantRole, TenantMembershipStatus } from "@prisma/client";
+import type { TenantRole, TenantMembershipStatus } from "@/types/tenancy-finance-enums-client";
 
 export type MemberRow = {
   id: string;

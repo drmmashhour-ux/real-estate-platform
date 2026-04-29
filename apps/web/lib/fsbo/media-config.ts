@@ -12,8 +12,8 @@
 // Platform-level hard cap; plan-based limits are enforced separately in upload/publish gates.
 export const FSBO_MAX_LISTING_IMAGES = 50;
 
-/** Per-file limit for photo uploads */
-export const FSBO_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+/** Per-file limit for photo uploads (aligned with server Sharp pipeline cap) */
+export const FSBO_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 export const FSBO_ALLOWED_IMAGE_MIME = new Set([
   "image/jpeg",

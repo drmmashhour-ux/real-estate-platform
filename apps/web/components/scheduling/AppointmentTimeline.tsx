@@ -1,6 +1,6 @@
 "use client";
 
-import type { AppointmentEvent, AppointmentEventType } from "@prisma/client";
+import type { AppointmentEventType, AppointmentEventView } from "@/types/scheduling-client";
 
 function label(t: AppointmentEventType): string {
   return t.replace(/_/g, " ");
@@ -9,7 +9,7 @@ function label(t: AppointmentEventType): string {
 export function AppointmentTimeline({
   events,
 }: {
-  events: Pick<AppointmentEvent, "id" | "type" | "message" | "createdAt">[];
+  events: Pick<AppointmentEventView, "id" | "type" | "message" | "createdAt">[];
 }) {
   if (events.length === 0) return <p className="text-sm text-slate-500">No events yet.</p>;
 

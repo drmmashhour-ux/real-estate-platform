@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { BnhubMarketingCampaignObjective, BnhubMarketingCampaignStatus } from "@prisma/client";
+import type { BnhubMarketingCampaignObjective, BnhubMarketingCampaignStatus } from "@/types/bnhub-client-models";
 import type { CampaignListRow } from "../types";
 import { m } from "../components/marketing-ui-classes";
 import { CampaignStatusBadge } from "../components/CampaignStatusBadge";

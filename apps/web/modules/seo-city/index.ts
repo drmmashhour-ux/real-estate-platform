@@ -1,18 +1,17 @@
 export * from "./seo-city.types";
 export { buildSeoMetadataBundle } from "./seo-city-metadata.service";
-export {
-  generateSeoCityModel,
-  metadataForSeoModel,
-  readSeoCityOverrides,
-  writeSeoCityOverrideClient,
-} from "./seo-city-generator.service";
+export { generateSeoCityModel, metadataForSeoModel } from "./seo-city-generator.service";
+export { readSeoCityOverrides, writeSeoCityOverrideClient } from "./seo-city-local-overrides.client";
 export {
   fetchSeoCityMarketStats,
   fetchSeoListingsPreview,
+} from "./seo-city-pages.service";
+export {
   getSeoCityTelemetry,
   recordSeoCityPageView,
   resetSeoCityTelemetryForTests,
-} from "./seo-city-pages.service";
+  type SeoCityTelemetry,
+} from "./seo-city-telemetry.client";
 export { citySeoSegmentPath, neighborhoodPath, withLocaleCountryPath } from "./seo-city-routing.service";
 export {
   buildBrokerBlocks,

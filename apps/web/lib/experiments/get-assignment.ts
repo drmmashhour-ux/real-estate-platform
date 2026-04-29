@@ -1,3 +1,5 @@
+import "server-only";
+
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { getActiveExperimentForSurface } from "@/lib/experiments/get-active-experiment";
 import { assignVariantForSession } from "@/lib/experiments/assign-variant";

@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import type { PlatformRole, TeamTask, TeamTaskPriority, TeamTaskStatus } from "@prisma/client";
+import type { PlatformRole } from "@/types/platform-role";
+import type { TeamTaskStatus, TeamTaskPriority, TeamTaskView } from "@/types/team-task-client";
 
-type TaskRow = TeamTask & {
+type TaskRow = TeamTaskView & {
   assignee: { id: string; name: string | null; email: string };
   createdBy: { id: string; name: string | null; email: string };
 };

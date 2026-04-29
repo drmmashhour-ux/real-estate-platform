@@ -1,4 +1,4 @@
-import type { BrokerTeamMemberRole, BrokerTeamMemberStatus } from "@prisma/client";
+import type { BrokerTeamMemberRole, BrokerTeamMemberStatus } from "@/types/broker-team-client";
 
 export function TeamMemberCard({
   userId,

@@ -1,14 +1,14 @@
 import type { DealClosingFundMilestone, LecipmDealPayment } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
-export const FUND_MILESTONE_KINDS = ["DEPOSIT", "MORTGAGE_FUNDS", "FINAL_DISBURSEMENT"] as const;
-export type ClosingFundMilestoneKind = (typeof FUND_MILESTONE_KINDS)[number];
+import {
+  FUND_MILESTONE_KINDS,
+  FUND_MILESTONE_LABELS,
+  type ClosingFundMilestoneKind,
+} from "./quebec-closing-fund-flow.constants";
 
-export const FUND_MILESTONE_LABELS: Record<ClosingFundMilestoneKind, string> = {
-  DEPOSIT: "Deposit / immobilisation",
-  MORTGAGE_FUNDS: "Mortgage / lender funds",
-  FINAL_DISBURSEMENT: "Final disbursement & trust release",
-};
+export type { ClosingFundMilestoneKind };
+export { FUND_MILESTONE_KINDS, FUND_MILESTONE_LABELS } from "./quebec-closing-fund-flow.constants";
 
 /** Ensure the three standard fund checkpoints exist for the deal (idempotent). */
 export async function ensureDefaultClosingFundMilestones(dealId: string): Promise<void> {

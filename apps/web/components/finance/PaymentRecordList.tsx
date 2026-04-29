@@ -1,4 +1,4 @@
-import type { PaymentRecordStatus, PaymentRecordType } from "@prisma/client";
+import type { PaymentRecordStatus, PaymentRecordType } from "@/types/tenancy-finance-enums-client";
 
 export type PaymentRow = {
   id: string;

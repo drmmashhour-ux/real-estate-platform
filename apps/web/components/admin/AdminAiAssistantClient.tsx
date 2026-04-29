@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
-import type { AdminAiInsight, AdminAiRun } from "@prisma/client";
+import type { AdminAiInsightView, AdminAiRunView } from "@/types/admin-ai-client";
 
 /** JSON-serialized rows from the server (dates as ISO strings). */
-type InsightRow = Omit<AdminAiInsight, "createdAt"> & { createdAt: string };
-type RunRow = Omit<AdminAiRun, "createdAt" | "startedAt" | "completedAt"> & {
+type InsightRow = Omit<AdminAiInsightView, "createdAt"> & { createdAt: string };
+type RunRow = Omit<AdminAiRunView, "createdAt" | "startedAt" | "completedAt"> & {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;

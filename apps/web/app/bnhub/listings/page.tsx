@@ -13,12 +13,12 @@ import {
   TrendingUp,
   Sparkles
 } from 'lucide-react';
-import { Card, CardContent } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { Input } from '../../../components/ui/Input';
-import { RecommendationSection } from '../../../components/bnhub/RecommendationSection';
-import { getRecommendedListings, Listing, RecommendationResult } from '../../../../modules/bnhub/recommendationEngine';
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Input } from "@/components/ui/Input";
+import { RecommendationSection } from "@/components/bnhub/RecommendationSection";
+import { getRecommendedListings, Listing, RecommendationResult } from "@/modules/bnhub/recommendationEngine";
 
 // Mock Data
 const MOCK_LISTINGS: Listing[] = [

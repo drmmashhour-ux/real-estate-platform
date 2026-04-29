@@ -1,5 +1,5 @@
-import { SubscriptionStatus } from "@prisma/client";
 import Link from "next/link";
+import { SubscriptionStatus } from "@/types/subscription-status-client";
 import { getLecipmUserSubscriptionSnapshot } from "@/modules/revenue/lecipm-subscription-snapshot.service";
 
 const ACTIVE: SubscriptionStatus[] = [SubscriptionStatus.active, SubscriptionStatus.trialing];

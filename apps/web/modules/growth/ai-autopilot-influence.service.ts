@@ -3,7 +3,7 @@
  */
 
 import { aiAutopilotInfluenceFlags } from "@/config/feature-flags";
-import { computePriorityScore } from "./ai-autopilot.service";
+import { computePriorityScore } from "./ai-autopilot-priority-scoring";
 import type { AiInfluenceSuggestion } from "./ai-autopilot-influence.types";
 import type { AiAutopilotImpact } from "./ai-autopilot.types";
 

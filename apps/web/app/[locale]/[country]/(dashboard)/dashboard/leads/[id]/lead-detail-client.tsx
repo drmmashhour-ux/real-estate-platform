@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   extractEvaluationSnapshot,
   extractLeadCity,
-} from "@/lib/leads/timeline-helpers";
+} from "@/lib/leads/timeline-helpers.extract.client";
 import { SalesAssistantPanel } from "./sales-assistant";
 import { getDmTemplateForLead, type DmTemplateKey } from "@/lib/leads/dm-templates";
 import { getContactWhatsAppUrl } from "@/lib/config/contact";

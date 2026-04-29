@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { BrokerClientStatus } from "@prisma/client";
+import type { BrokerClientStatus } from "@/types/broker-crm-client";
 import { getAllowedBrokerClientStatusTransitions } from "@/modules/crm/services/client-status-machine";
 
 function label(s: BrokerClientStatus): string {

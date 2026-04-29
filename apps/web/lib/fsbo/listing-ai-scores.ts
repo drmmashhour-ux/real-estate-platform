@@ -1,5 +1,5 @@
 import type { FsboListingDocument, FsboListingVerification, SellerSupportingDocument } from "@prisma/client";
-import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
+import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review.logic";
 import { missingDeclarationSections, type SellerDeclarationData } from "@/lib/fsbo/seller-declaration-schema";
 import { parseSellerDeclarationJson } from "@/lib/fsbo/seller-hub-validation";
 import { FSBO_HUB_REQUIRED_DOC_TYPES } from "@/lib/fsbo/seller-hub-doc-types";

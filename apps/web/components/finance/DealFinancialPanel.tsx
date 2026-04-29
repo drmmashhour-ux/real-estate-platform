@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { CommissionStatus } from "@prisma/client";
+import type { CommissionStatus } from "@/types/tenancy-finance-enums-client";
 import { CommissionSplitTable } from "@/components/finance/CommissionSplitTable";
 
 export type DealFinancialPanelData = {

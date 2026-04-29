@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FUND_MILESTONE_KINDS, FUND_MILESTONE_LABELS } from "@/modules/quebec-closing/quebec-closing-fund-flow";
+import { FUND_MILESTONE_KINDS, FUND_MILESTONE_LABELS } from "@/modules/quebec-closing/quebec-closing-fund-flow.constants";
 import type { QcClosingApiBundle } from "./qc-closing-types";
 
 const STATUSES = ["PENDING", "IN_FLIGHT", "COMPLETED", "NOT_APPLICABLE"] as const;

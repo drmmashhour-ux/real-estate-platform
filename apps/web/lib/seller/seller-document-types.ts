@@ -1,4 +1,4 @@
-import type { SellerSupportingDocumentCategory } from "@prisma/client";
+import type { SellerSupportingDocumentCategory } from "@/types/seller-supporting-doc-client";
 
 export const SELLER_DOCUMENT_CATEGORY_LABELS: Record<SellerSupportingDocumentCategory, string> = {
   IDENTITY: "Identity document",

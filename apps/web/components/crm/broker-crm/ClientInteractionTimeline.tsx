@@ -1,6 +1,9 @@
 "use client";
 
-import type { BrokerClientInteraction, BrokerInteractionType } from "@prisma/client";
+import type {
+  BrokerClientInteractionTimelineRow,
+  BrokerInteractionType,
+} from "@/types/broker-crm-client";
 
 function typeLabel(t: BrokerInteractionType): string {
   return t.replace(/_/g, " ");
@@ -9,14 +12,7 @@ function typeLabel(t: BrokerInteractionType): string {
 export function ClientInteractionTimeline({
   interactions,
 }: {
-  interactions: (Pick<
-    BrokerClientInteraction,
-    "id" | "type" | "title" | "message" | "createdAt" | "dueAt" | "completedAt"
-  > & {
-    createdAt?: Date | string;
-    dueAt?: Date | string | null;
-    completedAt?: Date | string | null;
-  })[];
+  interactions: BrokerClientInteractionTimelineRow[];
 }) {
   if (interactions.length === 0) {
     return <p className="text-sm text-slate-500">No interactions yet.</p>;

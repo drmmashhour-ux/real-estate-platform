@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { GetLeadsPageClient } from "@/components/growth/get-leads-page-client";
 import { PLATFORM_NAME } from "@/lib/brand/platform";
-import { PlatformRole } from "@prisma/client";
+import { PlatformRole } from "@/types/platform-role";
 import { engineFlags } from "@/config/feature-flags";
 import { getConversionEngineFlagsEffective } from "@/config/rollout";
 import { getLegacyDB } from "@/lib/db/legacy";
@@ -52,7 +52,7 @@ export default async function GetLeadsPage({
     isPrivilegedUser = Boolean(
       u?.accountStatus === "ACTIVE" &&
         u?.role != null &&
-        (u.role === PlatformRole.ADMIN || u.role === PlatformRole.ACCOUNTANT),
+        (u.role === "ADMIN" || u.role === "ACCOUNTANT"),
     );
   }
   const effectiveConversion = getConversionEngineFlagsEffective({

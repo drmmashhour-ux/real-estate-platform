@@ -30,6 +30,15 @@ const forceNoStoreDocumentCache = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  /**
+   * Phase 1: Next 16 no longer honors `swcMinify`; webpack `optimization.minimize` is toggled below to surface
+   * real compile errors when minifier plugins misbehave (`WebpackError is not a constructor`).
+   */
+  experimental: {
+    /** Narrow parallelism for reproducible/stable CI/webpack behavior */
+    cpus: 1,
+    workerThreads: false,
+  },
   /** Next.js 16 defaults to Turbopack; `next-pwa` injects webpack config — empty Turbopack block opts in explicitly. */
   turbopack: {},
   transpilePackages: [
@@ -103,7 +112,22 @@ const nextConfig: NextConfig = {
    * Avoid webpack’s PackFileCacheStrategy disk cache when builders are low on space (ENOSPC).
    * Enable with `NEXT_DISABLE_WEBPACK_CACHE=1` or `CI=true` — slightly slower compile, same output.
    */
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, isServer }) => {
+    if (!dev) {
+      /** Default off: minifier bugs mask real compile errors; set `NEXT_WEBPACK_MINIMIZE=1` for production-sized outputs. */
+      const enableMinify = process.env.NEXT_WEBPACK_MINIMIZE === "1";
+      config.optimization = config.optimization ?? {};
+      config.optimization.minimize = enableMinify;
+    }
+    if (!isServer) {
+      config.resolve = config.resolve ?? {};
+      config.resolve.fallback = {
+        ...(config.resolve.fallback ?? {}),
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
     if (!dev && disableWebpackPersistentCache) {
       config.cache = false;
     }

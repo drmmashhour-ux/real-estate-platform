@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from "@/lib/db";
 import { getActivationPrompt } from "../../../../../modules/brokers/activation.service";
 
 export async function GET(req: NextRequest) {

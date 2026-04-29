@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cookies, headers } from "next/headers";
 import { EXPERIMENT_SESSION_COOKIE_NAME, EXPERIMENT_SESSION_HEADER } from "@/lib/experiments/constants";
 

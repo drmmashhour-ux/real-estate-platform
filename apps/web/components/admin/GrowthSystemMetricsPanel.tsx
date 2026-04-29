@@ -1,4 +1,5 @@
-import { BookingStatus, ListingAnalyticsKind } from "@prisma/client";
+import { BookingStatus } from "@/types/booking-status-client";
+import { ListingAnalyticsKind } from "@/types/listing-analytics-kind-client";
 import { prisma } from "@/lib/db";
 
 const WINDOW_DAYS = 30;

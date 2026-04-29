@@ -1,6 +1,6 @@
 "use client";
 
-import type { BnhubMarketingRecommendation } from "@prisma/client";
+import type { BnhubMarketingRecommendation } from "@/types/bnhub-client-models";
 import { m } from "./marketing-ui-classes";
 
 const PRIORITY_RING: Record<string, string> = {

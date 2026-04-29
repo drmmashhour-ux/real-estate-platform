@@ -1,4 +1,4 @@
-import type { ClassificationBreakdown } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
+import type { ClassificationBreakdown } from "@/types/bnhub-classification-client";
 import { BNHubStarRatingDisplay } from "./BNHubStarRatingDisplay";
 
 export function HostBnhubRatingPanel({

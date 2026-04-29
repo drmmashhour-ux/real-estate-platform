@@ -1,6 +1,6 @@
 "use client";
 
-import type { JsonValue } from "@prisma/client/runtime/library";
+import type { JsonValue } from "@/types/json-value";
 
 export function BriefingSectionCard({
   title,

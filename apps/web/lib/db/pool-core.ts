@@ -3,6 +3,7 @@
  * (no ad-hoc `new Pool` elsewhere; use `import { pool, query, … } from "@/lib/db"`).
  * Tuning: `max` 10 default, `idleTimeoutMillis` 30s, `connectionTimeoutMillis` 5s.
  */
+import "./db-entry-guard";
 import "server-only";
 
 import { Pool } from "pg";

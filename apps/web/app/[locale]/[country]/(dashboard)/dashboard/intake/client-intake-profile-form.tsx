@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { ClientIntakeProfile } from "@prisma/client";
+import type { ClientIntakeProfileFormView } from "@/types/client-intake-profile-form-client";
 
 type Props = {
   brokerClientId: string;
-  initial: ClientIntakeProfile;
+  initial: ClientIntakeProfileFormView;
 };
 
 export function ClientIntakeProfileForm({ brokerClientId, initial }: Props) {

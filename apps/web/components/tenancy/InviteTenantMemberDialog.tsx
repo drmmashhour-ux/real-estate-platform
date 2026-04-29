@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { TenantRole } from "@prisma/client";
+import type { TenantRole } from "@/types/tenancy-finance-enums-client";
 import { TENANT_ROLE_LABELS } from "@/modules/tenancy/constants";
 
 const ROLES: TenantRole[] = [

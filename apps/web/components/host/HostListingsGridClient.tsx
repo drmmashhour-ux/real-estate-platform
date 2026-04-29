@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ListingStatus } from "@prisma/client";
+import { ListingStatusClient, type ListingHostFilterStatus } from "@/types/listing-status-client";
 import type { HostListingManageRow } from "@/lib/host/listings-data";
 import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -13,13 +13,13 @@ const GOLD = "#D4AF37";
 const SORTS = ["recent", "price_asc", "price_desc", "title_asc"] as const;
 type SortKey = (typeof SORTS)[number];
 
-type StatusFilter = "ALL" | ListingStatus;
+type StatusFilter = "ALL" | ListingHostFilterStatus;
 
-function statusLabel(s: ListingStatus): string {
-  if (s === ListingStatus.PUBLISHED) return "Live";
-  if (s === ListingStatus.DRAFT) return "Draft";
-  if (s === ListingStatus.UNLISTED) return "Paused";
-  if (s === ListingStatus.PENDING_REVIEW) return "In review";
+function statusLabel(s: ListingHostFilterStatus): string {
+  if (s === ListingStatusClient.PUBLISHED) return "Live";
+  if (s === ListingStatusClient.DRAFT) return "Draft";
+  if (s === ListingStatusClient.UNLISTED) return "Paused";
+  if (s === ListingStatusClient.PENDING_REVIEW) return "In review";
   return String(s);
 }
 
@@ -181,10 +181,10 @@ export function HostListingsGridClient({
               className="rounded-xl border border-zinc-700 bg-black px-3 py-2.5 text-sm text-white focus:border-amber-600/50 focus:outline-none focus:ring-1 focus:ring-amber-600/30"
             >
               <option value="ALL">All statuses</option>
-              <option value={ListingStatus.PUBLISHED}>Live</option>
-              <option value={ListingStatus.DRAFT}>Draft</option>
-              <option value={ListingStatus.UNLISTED}>Paused</option>
-              <option value={ListingStatus.PENDING_REVIEW}>In review</option>
+              <option value={ListingStatusClient.PUBLISHED}>Live</option>
+              <option value={ListingStatusClient.DRAFT}>Draft</option>
+              <option value={ListingStatusClient.UNLISTED}>Paused</option>
+              <option value={ListingStatusClient.PENDING_REVIEW}>In review</option>
             </select>
           </div>
           <div className="flex min-w-[160px] flex-col gap-1">
@@ -325,7 +325,7 @@ export function HostListingsGridClient({
                   >
                     Calendar
                   </Link>
-                  {l.listingStatus === ListingStatus.PUBLISHED ? (
+                  {l.listingStatus === ListingStatusClient.PUBLISHED ? (
                     <button
                       type="button"
                       disabled={busy}
@@ -335,7 +335,7 @@ export function HostListingsGridClient({
                       Pause (inactive)
                     </button>
                   ) : null}
-                  {l.listingStatus === ListingStatus.UNLISTED ? (
+                  {l.listingStatus === ListingStatusClient.UNLISTED ? (
                     <button
                       type="button"
                       disabled={busy}

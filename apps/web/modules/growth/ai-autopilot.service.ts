@@ -6,11 +6,11 @@
 import { buildUnifiedSnapshot, type UnifiedLearningSnapshot } from "@/modules/growth/unified-learning.service";
 import type {
   AiAutopilotAction,
-  AiAutopilotImpact,
   AiAutopilotSignalStrength,
   GrowthAutopilotAnalysis,
 } from "./ai-autopilot.types";
-import { applyLearningToAutopilotPriorityScore } from "./growth-learning-integration.service";
+import { computePriorityScore } from "./ai-autopilot-priority-scoring";
+export { computePriorityScore };
 
 /** Alias matching the growth machine naming — delegates to existing `buildUnifiedSnapshot()`. */
 export function buildGrowthUnifiedSnapshot(): UnifiedLearningSnapshot {
@@ -29,34 +29,6 @@ export function resolveSnapshotSignal(snapshot: UnifiedLearningSnapshot): AiAuto
   if (h === "HIGH") return "strong";
   if (h === "MEDIUM") return "medium";
   return "low";
-}
-
-function impactWeight(impact: AiAutopilotImpact): number {
-  if (impact === "high") return 3;
-  if (impact === "medium") return 2;
-  return 1;
-}
-
-function signalWeight(strength: AiAutopilotSignalStrength): number {
-  if (strength === "strong") return 1;
-  if (strength === "medium") return 0.62;
-  return 0.35;
-}
-
-/**
- * priorityScore = f(impact, confidence, signalStrength) → 0–100.
- * Conservative blend — not a business KPI.
- */
-export function computePriorityScore(
-  impact: AiAutopilotImpact,
-  confidence: number,
-  signalStrength: AiAutopilotSignalStrength,
-): number {
-  const iw = impactWeight(impact) / 3;
-  const sw = signalWeight(signalStrength);
-  const raw = iw * 38 + Math.min(1, Math.max(0, confidence)) * 40 + sw * 22;
-  const base = Math.min(100, Math.max(0, Math.round(raw)));
-  return applyLearningToAutopilotPriorityScore(base, impact);
 }
 
 export function analyzeGrowth(snapshot: UnifiedLearningSnapshot): GrowthAutopilotAnalysis {

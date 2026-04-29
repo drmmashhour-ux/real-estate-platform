@@ -1,4 +1,4 @@
-import type { BnhubMarketingCampaignStatus } from "@prisma/client";
+import type { BnhubMarketingCampaignStatus } from "@/types/bnhub-client-models";
 import { m } from "./marketing-ui-classes";
 
 const STATUS_STYLES: Record<BnhubMarketingCampaignStatus, string> = {

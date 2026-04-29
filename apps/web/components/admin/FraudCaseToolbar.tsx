@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FraudCaseStatus } from "@prisma/client";
+import type { FraudCaseStatus } from "@/types/admin-reputation-client";
 
 export function FraudCaseToolbar({ caseId }: { caseId: string }) {
   const [msg, setMsg] = useState<string | null>(null);

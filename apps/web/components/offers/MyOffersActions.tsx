@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import type { OfferStatus } from "@prisma/client";
+import type { OfferStatus } from "@/types/offers-client";
 
 type Props = {
   offerId: string;

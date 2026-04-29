@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import type { OfferEvent, OfferEventType, OfferStatus } from "@prisma/client";
+import type { OfferEventRow, OfferEventType, OfferStatus } from "@/types/offers-client";
 import { OfferTimeline } from "@/components/offers/OfferTimeline";
 import { getAllowedTransitions, canPostCounterOffer } from "@/modules/offers/services/offer-status-machine";
 import type { OfferActorRole } from "@/modules/offers/services/offer-status-machine";
@@ -214,7 +214,7 @@ export function OfferDetailClient({ initialOffer, viewer }: Props) {
               type: e.type as OfferEventType,
               message: e.message,
               createdAt: new Date(e.createdAt as unknown as string | Date),
-              metadata: e.metadata as OfferEvent["metadata"],
+              metadata: e.metadata as OfferEventRow["metadata"],
             }))}
           />
         </div>

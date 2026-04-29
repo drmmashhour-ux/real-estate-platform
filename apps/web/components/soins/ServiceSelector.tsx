@@ -1,6 +1,6 @@
 "use client";
 
-import type { CareServiceKind } from "@prisma/client";
+import type { CareServiceKind } from "@/types/soins-care-client";
 
 export type ServiceOption = {
   id: string;

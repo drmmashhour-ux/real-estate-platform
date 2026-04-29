@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { MarketplaceMemoryRole } from "@prisma/client";
+import { MarketplaceMemoryRole } from "@/types/marketplace-memory-role-client";
 
 type ProfileRow = {
   id: string;

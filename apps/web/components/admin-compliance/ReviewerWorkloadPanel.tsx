@@ -1,6 +1,6 @@
-import type { QaReview } from "@prisma/client";
+import type { QaReviewView } from "@/types/compliance-cases-client";
 
-type ReviewRow = QaReview & {
+type ReviewRow = QaReviewView & {
   deal: { id: string; dealCode: string | null; brokerId: string | null } | null;
 };
 

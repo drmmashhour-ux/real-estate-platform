@@ -1,13 +1,12 @@
 import Link from "next/link";
-import type { BrokerDealAssignment } from "@prisma/client";
-
+import type { BrokerDealAssignmentView } from "@/types/broker-team-client";
 type DealRow = {
   id: string;
   dealCode: string | null;
   status: string;
   crmStage: string | null;
   updatedAt: Date;
-  brokerDealAssignments: BrokerDealAssignment[];
+  brokerDealAssignments: BrokerDealAssignmentView[];
 };
 
 export function TeamDealBoard({ basePath, deals }: { basePath: string; deals: DealRow[] }) {

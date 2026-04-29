@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
+import { FREE_BROKER_VISIBLE_LEADS } from "./broker-lead-tier.constants";
 
-export const FREE_BROKER_VISIBLE_LEADS = 3;
+export { FREE_BROKER_VISIBLE_LEADS };
 
 /** Whether a mortgage request is in the broker’s “visible” slice (latest N for free tier). */
 export async function isMortgageLeadUnlockedForBroker(

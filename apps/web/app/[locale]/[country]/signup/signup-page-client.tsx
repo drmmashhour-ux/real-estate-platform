@@ -7,7 +7,7 @@ import { PLATFORM_NAME, platformBrandGoldTextClass } from "@/lib/brand/platform"
 import { AuthAccountValueCallout } from "@/components/auth/AuthAccountValueCallout";
 import { SignupAccountClient } from "@/components/auth/SignupAccountClient";
 import { track } from "@/lib/tracking";
-import { VIRAL_REF_COOKIE } from "@/lib/referrals/viral";
+import { VIRAL_REF_COOKIE } from "@/lib/referrals/viral.constants";
 
 function readViralRefCookie(): string {
   if (typeof document === "undefined") return "";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { ListingStatus } from "@prisma/client";
+import { ListingStatus } from "@/types/listing-status-client";
 
 const fmt = (cents: number, currency: string) => {
   const amount = cents / 100;

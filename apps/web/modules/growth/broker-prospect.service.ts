@@ -8,16 +8,8 @@ import { PlatformRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { buildLeadPreview } from "@/modules/growth/lead-preview.service";
 
-export const BROKER_PROSPECT_STATUSES = [
-  "new",
-  "contacted",
-  "replied",
-  "demo_scheduled",
-  "converted",
-  "lost",
-] as const;
-
-export type BrokerProspectStatus = (typeof BROKER_PROSPECT_STATUSES)[number];
+export type { BrokerProspectStatus } from "./broker-prospect.constants";
+export { BROKER_PROSPECT_STATUSES } from "./broker-prospect.constants";
 
 export type BrokerProspectSource = "manual" | "instagram" | "referral";
 

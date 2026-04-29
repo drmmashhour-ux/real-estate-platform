@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { BrokerInteractionType } from "@prisma/client";
+import type { BrokerInteractionType } from "@/types/broker-crm-client";
 
 const TYPES: { value: BrokerInteractionType; label: string }[] = [
   { value: "NOTE", label: "Note" },

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { InvestmentDeal } from "@prisma/client";
+import type { PortfolioDashboardDealRow } from "@/types/investment-deal-client";
 import { GeneratedByLecipm } from "@/components/brand/GeneratedByLecipm";
 import {
   getInsightToneFromString,
@@ -29,26 +29,7 @@ import {
 import { UpgradeToProLink } from "@/components/investment/UpgradeToProLink";
 import { MortgageUserHub } from "@/components/mortgage/MortgageUserHub";
 
-export type DashboardDealRow = Pick<
-  InvestmentDeal,
-  | "id"
-  | "rentalType"
-  | "preferredStrategy"
-  | "propertyPrice"
-  | "monthlyRent"
-  | "monthlyExpenses"
-  | "nightlyRate"
-  | "occupancyRate"
-  | "roiLongTerm"
-  | "roiShortTerm"
-  | "roi"
-  | "riskScore"
-  | "rating"
-  | "city"
-  | "marketComparison"
-> & {
-  createdAt: Date | string;
-};
+export type DashboardDealRow = PortfolioDashboardDealRow;
 
 const PI_DISMISS_DASH_AVG = "lecipm_pi_dismiss_dash_avg_v1";
 const PI_DISMISS_DASH_COMPARE = "lecipm_pi_dismiss_dash_compare_v1";

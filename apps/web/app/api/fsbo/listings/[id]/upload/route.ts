@@ -6,7 +6,13 @@ import {
   FSBO_MAX_IMAGE_BYTES,
 } from "@/lib/fsbo/media-config";
 import { assessListingPhotoForPropertyUse } from "@/lib/fsbo/assess-listing-photo-relevance";
-import { uploadFsboListingImage } from "@/lib/fsbo/upload-fsbo-listing-image";
+import { uploadFsboListingImageBundle } from "@/lib/fsbo/upload-fsbo-listing-image";
+import {
+  getImageQualityScore,
+  QUALITY_REJECT_BELOW,
+  tierForQualityScore,
+} from "@/lib/images/quality-score";
+import { smartCrop } from "@/lib/images/smart-crop";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
 import { getFsboMaxPhotosForSellerPlan } from "@/lib/fsbo/photo-limits";
 import sharp from "sharp";
@@ -14,7 +20,7 @@ import sharp from "sharp";
 export const dynamic = "force-dynamic";
 
 /**
- * POST multipart/form-data: field `file` — one image (jpeg/png/webp), max 5MB.
+ * POST multipart/form-data: field `file` — one image (jpeg/png/webp), max 10MB.
  * Owner-only; listing must exist (any non-SOLD status for edits).
  */
 export async function POST(
@@ -67,7 +73,7 @@ export async function POST(
   }
 
   if (file.size > FSBO_MAX_IMAGE_BYTES) {
-    return Response.json({ error: "Image too large (max 5MB)" }, { status: 400 });
+    return Response.json({ error: "Image too large (max 10MB)" }, { status: 400 });
   }
 
   const inputType = (file.type ?? "").toLowerCase();
@@ -75,6 +81,9 @@ export async function POST(
   const ext = fileName.includes(".") ? fileName.split(".").pop()?.toLowerCase() : undefined;
 
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  const qualityOverride = form.get("qualityOverride") === "true";
+  const skipSmartCrop = form.get("skipSmartCrop") === "true";
 
   const resolveImage = async (): Promise<{ buffer: Buffer; contentType: string }> => {
     // Prefer declared mime when present.
@@ -98,23 +107,53 @@ export async function POST(
 
   try {
     const { buffer: finalBuffer, contentType } = await resolveImage();
+
+    const quality = await getImageQualityScore(finalBuffer);
+    const tier = tierForQualityScore(quality.score);
+
+    if (quality.score < QUALITY_REJECT_BELOW && !qualityOverride) {
+      return Response.json(
+        {
+          error:
+            "Image quality is too low for listing photos. Use better lighting, a sharper shot, or a larger photo.",
+          quality,
+          tier,
+          rejected: true as const,
+        },
+        { status: 422 },
+      );
+    }
+
+    let pipelineBuffer: Buffer = Buffer.from(finalBuffer);
+    if (!skipSmartCrop) {
+      pipelineBuffer = await smartCrop(pipelineBuffer);
+    }
+
     const existingImages = Array.isArray(listing.images) ? (listing.images as string[]) : [];
-    const relevance = await assessListingPhotoForPropertyUse(finalBuffer, {
+    const relevance = await assessListingPhotoForPropertyUse(pipelineBuffer, {
       propertyType: listing.propertyType,
       role: existingImages.length === 0 ? "cover" : "additional",
     });
     if (!relevance.ok) {
       return Response.json({ error: relevance.userMessage }, { status: 400 });
     }
-    const up = await uploadFsboListingImage({
+    const up = await uploadFsboListingImageBundle({
       listingId: id,
       buffer: finalBuffer,
       contentType,
+      pipelineBuffer,
+      smartCropAttention: false,
+      safeCenterCrop: skipSmartCrop && process.env.FSBO_IMAGE_SAFE_CENTER_CROP === "1",
     });
     if ("error" in up) {
       return Response.json({ error: up.error }, { status: up.status ?? 400 });
     }
-    return Response.json({ url: up.url });
+    return Response.json({
+      url: up.url,
+      urls: up.urls,
+      quality,
+      tier,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed";
     if (message === "Unsupported image format") {

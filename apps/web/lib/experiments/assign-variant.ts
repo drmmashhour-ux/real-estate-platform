@@ -1,3 +1,5 @@
+import "server-only";
+
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { normalizeTrafficSplit, parseTrafficSplitJson } from "@/lib/experiments/validators";
 

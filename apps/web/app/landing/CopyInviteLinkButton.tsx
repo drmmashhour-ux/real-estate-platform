@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getReferralMessage } from "@/lib/growth/referral";
+import { getReferralMessage } from "@/lib/growth/referral-message";
 
 /**
  * Resolves the public invite URL in the browser and copies it to the clipboard.

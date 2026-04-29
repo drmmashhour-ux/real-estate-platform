@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PlatformRole } from "@prisma/client";
+import type { PlatformRole } from "@/types/platform-role";
 import { LecipmBrokerListingInbox } from "@/components/messaging/LecipmBrokerListingInbox";
 import { MessagesPageClient } from "@/components/messaging/MessagesPageClient";
 

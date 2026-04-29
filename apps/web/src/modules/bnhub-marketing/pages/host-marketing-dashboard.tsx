@@ -6,7 +6,7 @@ import type { CampaignListRow } from "../types";
 import { m } from "../components/marketing-ui-classes";
 import { CampaignStatusBadge } from "../components/CampaignStatusBadge";
 import { ScheduleCampaignModal } from "../components/ScheduleCampaignModal";
-import type { BnhubMarketingCampaignObjective } from "@prisma/client";
+import type { BnhubMarketingCampaignObjective } from "@/types/bnhub-client-models";
 
 type Overview = {
   listings: { id: string; title: string; city: string | null; listingCode: string | null }[];
