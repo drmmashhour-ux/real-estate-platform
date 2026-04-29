@@ -1,7 +1,6 @@
 import type { SimulationRunContext, SimulationScenarioResult } from "@/modules/e2e-simulation/e2e-simulation.types";
 import { apiUrl, fetchEvidence } from "@/modules/e2e-simulation/http-simulation";
 import { finalizeScenario } from "@/modules/e2e-simulation/scenario-helpers";
-import { runStripeBookingE2e } from "@/modules/launch/stripe-booking-e2e.engine";
 
 export async function runPaymentSimulation(ctx: SimulationRunContext): Promise<SimulationScenarioResult> {
   const steps = [];
@@ -55,6 +54,7 @@ export async function runPaymentSimulation(ctx: SimulationRunContext): Promise<S
         blockers: [],
       });
     } else {
+      const { runStripeBookingE2e } = await import("@/modules/launch/stripe-booking-e2e.engine");
       const e2e = await runStripeBookingE2e({
         baseUrl: ctx.baseUrl,
         testDuplicateWebhook: true,

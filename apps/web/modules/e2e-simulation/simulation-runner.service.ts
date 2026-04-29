@@ -8,7 +8,7 @@ import { runFounderSimulation } from "../../tests/scenarios/founder-flow";
 import { runAiSystemsSimulation } from "../../tests/scenarios/ai-systems-flow";
 import { runPaymentSimulation } from "../../tests/scenarios/payment-flow";
 import { runFailureEdgeSimulation } from "../../tests/scenarios/failure-flow";
-import { runMobileBrokerServiceSimulation } from "../../../mobile/tests/scenarios/mobile-broker-flow";
+import { runMobileBrokerServiceSimulation } from "../../tests/scenarios/mobile-broker-flow";
 import type { SimulationStepResult } from "./e2e-simulation.types";
 import { scenarioRollup } from "./simulation-status.service";
 

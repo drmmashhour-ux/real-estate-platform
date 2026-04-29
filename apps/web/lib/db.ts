@@ -1,4 +1,4 @@
-import "./db-entry-guard";
+import "./db/db-entry-guard";
 import "server-only";
 
 if (typeof window !== "undefined") {

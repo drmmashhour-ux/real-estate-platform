@@ -1,0 +1,596 @@
+{
+  "version": "LECIPM Full Browser E2E Validation v1",
+  "generatedAt": "2026-04-29T17:56:16.157Z",
+  "context": {
+    "baseUrl": "http://localhost:3001",
+    "locale": "en",
+    "country": "ca",
+    "executeLiveStripeBooking": false,
+    "executeMobileDeepChecks": false
+  },
+  "scenarios": [
+    {
+      "scenarioId": "bnhub-guest-v1",
+      "scenarioName": "BNHub Guest Flow",
+      "domain": "bnhub_guest",
+      "steps": [
+        {
+          "stepId": "bg-1",
+          "title": "Homepage loads",
+          "status": "FAIL",
+          "details": "GET 0",
+          "routeOrService": "http://localhost:3001/en/ca/",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": [
+            "HTTP 0"
+          ]
+        },
+        {
+          "stepId": "bg-2",
+          "title": "BNHub stays page loads",
+          "status": "FAIL",
+          "details": "GET 0",
+          "routeOrService": "http://localhost:3001/en/ca/bnhub/stays",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": [
+            "HTTP 0"
+          ]
+        },
+        {
+          "stepId": "bg-3",
+          "title": "BNHub hub entry loads",
+          "status": "FAIL",
+          "details": "GET 0",
+          "routeOrService": "http://localhost:3001/en/ca/bnhub",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": [
+            "HTTP 0"
+          ]
+        },
+        {
+          "stepId": "bg-4",
+          "title": "Buyer browse API responds",
+          "status": "PASS",
+          "details": "HTTP 0",
+          "routeOrService": "http://localhost:3001/api/buyer/browse",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "bg-5",
+          "title": "API ready probe",
+          "status": "FAIL",
+          "details": "HTTP 0",
+          "routeOrService": "http://localhost:3001/api/ready",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "bg-6",
+          "title": "Booking checkout requires session (Stripe path)",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/dashboard/buyer",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "bg-7",
+          "title": "Stripe checkout rejects empty unauthenticated body safely",
+          "status": "PASS",
+          "details": "HTTP 0",
+          "routeOrService": "/api/stripe/checkout",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "FAIL",
+      "summary": "BNHub Guest Flow: FAIL (7 steps)"
+    },
+    {
+      "scenarioId": "bnhub-host-v1",
+      "scenarioName": "BNHub Host Flow",
+      "domain": "bnhub_host",
+      "steps": [
+        {
+          "stepId": "bh-1",
+          "title": "BNHub host dashboard route (public shell)",
+          "status": "FAIL",
+          "details": "GET 0",
+          "routeOrService": "http://localhost:3001/en/ca/bnhub/host/dashboard",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": [
+            "HTTP 0"
+          ]
+        },
+        {
+          "stepId": "bh-2",
+          "title": "Host dashboard requires auth",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/dashboard/host",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "bh-3",
+          "title": "Host payouts protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/dashboard/host/payouts",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "bh-4",
+          "title": "Pricing suggestion API safe failure without auth/body",
+          "status": "WARNING",
+          "details": "HTTP 0",
+          "routeOrService": "/api/bnhub/host/pricing/suggest",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "FAIL",
+      "summary": "BNHub Host Flow: FAIL (4 steps)"
+    },
+    {
+      "scenarioId": "broker-v1",
+      "scenarioName": "Residential Broker Flow",
+      "domain": "broker",
+      "steps": [
+        {
+          "stepId": "br-1",
+          "title": "Broker dashboard requires auth",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/dashboard/broker",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "br-2",
+          "title": "Broker CRM protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/dashboard/broker/crm",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "br-3",
+          "title": "Broker pipeline protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/dashboard/broker/pipeline",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "br-4",
+          "title": "Broker ROI API responds without 5xx (may be 400/403 if feature off)",
+          "status": "PASS",
+          "details": "HTTP 0",
+          "routeOrService": "/api/roi/broker",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "WARNING",
+      "summary": "Residential Broker Flow: WARNING (4 steps)"
+    },
+    {
+      "scenarioId": "admin-v1",
+      "scenarioName": "Admin / Moderation Flow",
+      "domain": "admin",
+      "steps": [
+        {
+          "stepId": "ad-1",
+          "title": "Admin root protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "ad-2",
+          "title": "BNHub admin area protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin/bnhub",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "ad-3",
+          "title": "Compliance queue protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin/compliance",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "ad-4",
+          "title": "Fraud surface protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin/fraud",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "ad-5",
+          "title": "Admin testing report API rejects anonymous",
+          "status": "WARNING",
+          "details": "HTTP 0",
+          "routeOrService": "/api/admin/testing/report",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "WARNING",
+      "summary": "Admin / Moderation Flow: WARNING (5 steps)"
+    },
+    {
+      "scenarioId": "founder-v1",
+      "scenarioName": "Founder / Owner Dashboard Flow",
+      "domain": "founder",
+      "steps": [
+        {
+          "stepId": "fo-1",
+          "title": "CEO / executive surface protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin/ceo",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "fo-2",
+          "title": "Execution dashboard protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin/execution",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "fo-3",
+          "title": "Investor dashboard protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin/investor-dashboard",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        },
+        {
+          "stepId": "fo-4",
+          "title": "Strategy / LECIPM engines protected",
+          "status": "WARNING",
+          "details": "Unauthenticated GET returned 0",
+          "routeOrService": "http://localhost:3001/en/ca/admin/lecipm-engines",
+          "evidence": "fetch failed",
+          "frictionPoints": [
+            "Could not confirm auth wall — verify middleware"
+          ],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "WARNING",
+      "summary": "Founder / Owner Dashboard Flow: WARNING (4 steps)"
+    },
+    {
+      "scenarioId": "mobile-broker-v1",
+      "scenarioName": "Mobile Broker Flow (service-level)",
+      "domain": "mobile_broker",
+      "steps": [
+        {
+          "stepId": "mb-apps/mobile-broker/index.ts",
+          "title": "Source present: apps/mobile-broker/index.ts",
+          "status": "PASS",
+          "details": "file exists",
+          "routeOrService": "apps/mobile",
+          "evidence": "/Users/mohamedalmashhour/real-estate-platform/apps/mobile-broker/index.ts",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "mb-apps/mobile-broker/lib/api.ts",
+          "title": "Source present: apps/mobile-broker/lib/api.ts",
+          "status": "PASS",
+          "details": "file exists",
+          "routeOrService": "apps/mobile",
+          "evidence": "/Users/mohamedalmashhour/real-estate-platform/apps/mobile-broker/lib/api.ts",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "mb-apps/mobile-broker/lib/supabase.ts",
+          "title": "Source present: apps/mobile-broker/lib/supabase.ts",
+          "status": "PASS",
+          "details": "file exists",
+          "routeOrService": "apps/mobile",
+          "evidence": "/Users/mohamedalmashhour/real-estate-platform/apps/mobile-broker/lib/supabase.ts",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "mb-runtime",
+          "title": "Runtime broker mobile session + push inbox",
+          "status": "NOT_CONFIRMED",
+          "details": "Requires device/emulator or Expo E2E — not executed in Node simulation",
+          "routeOrService": "apps/mobile",
+          "evidence": "skipped",
+          "frictionPoints": [
+            "runtime not exercised"
+          ],
+          "blockers": []
+        }
+      ],
+      "recommendations": [
+        "Run Expo app against staging with broker_test_user for true mobile validation."
+      ],
+      "status": "NOT_CONFIRMED",
+      "summary": "Mobile Broker Flow (service-level): NOT_CONFIRMED (4 steps)"
+    },
+    {
+      "scenarioId": "ai-systems-v1",
+      "scenarioName": "AI Systems Flow",
+      "domain": "ai_systems",
+      "steps": [
+        {
+          "stepId": "ai-1",
+          "title": "ROI calculator API returns structured response or feature-off 403",
+          "status": "WARNING",
+          "details": "HTTP 0",
+          "routeOrService": "/api/roi/calculate",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "ai-2",
+          "title": "AI pricing suggestion requires auth (401 without session)",
+          "status": "WARNING",
+          "details": "HTTP 0",
+          "routeOrService": "/api/ai/pricing/suggest",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "ai-3",
+          "title": "Platform intelligence endpoint fails closed without auth/config (not 5xx)",
+          "status": "PASS",
+          "details": "HTTP 0",
+          "routeOrService": "/api/ai/intelligence/evaluate-platform",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "WARNING",
+      "summary": "AI Systems Flow: WARNING (3 steps)"
+    },
+    {
+      "scenarioId": "payment-v1",
+      "scenarioName": "Payment / Stripe Flow",
+      "domain": "payments",
+      "steps": [
+        {
+          "stepId": "pay-1",
+          "title": "API ready before payment checks",
+          "status": "FAIL",
+          "details": "HTTP 0",
+          "routeOrService": "/api/ready",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "pay-2",
+          "title": "Booking checkout requires session (401/403)",
+          "status": "WARNING",
+          "details": "HTTP 0",
+          "routeOrService": "/api/stripe/checkout",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "pay-3-skip",
+          "title": "Live Stripe + webhook + DB proof not executed (flag off)",
+          "status": "NOT_CONFIRMED",
+          "details": "Set executeLiveStripeBooking or run CLI with LAUNCH_VALIDATION_RUN_STRIPE_E2E=1",
+          "routeOrService": "runStripeBookingE2e",
+          "evidence": "skipped",
+          "frictionPoints": [],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "FAIL",
+      "summary": "Payment / Stripe Flow: FAIL (3 steps)"
+    },
+    {
+      "scenarioId": "failure-v1",
+      "scenarioName": "Failure / Edge Cases",
+      "domain": "failure_edge",
+      "steps": [
+        {
+          "stepId": "fe-1",
+          "title": "Stripe webhook rejects invalid body safely",
+          "status": "WARNING",
+          "details": "HTTP 0",
+          "routeOrService": "/api/stripe/webhook",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "fe-2",
+          "title": "Admin compliance API rejects anonymous",
+          "status": "WARNING",
+          "details": "HTTP 0",
+          "routeOrService": "/api/admin/compliance/cases",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "fe-3",
+          "title": "Invalid booking checkout rejected (not 5xx)",
+          "status": "PASS",
+          "details": "HTTP 0",
+          "routeOrService": "/api/stripe/checkout",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        },
+        {
+          "stepId": "fe-4",
+          "title": "Analytics track handles malformed payload without 5xx",
+          "status": "PASS",
+          "details": "HTTP 0",
+          "routeOrService": "/api/analytics/track",
+          "evidence": "fetch failed",
+          "frictionPoints": [],
+          "blockers": []
+        }
+      ],
+      "recommendations": [],
+      "status": "WARNING",
+      "summary": "Failure / Edge Cases: WARNING (4 steps)"
+    },
+    {
+      "scenarioId": "browser-e2e-v1",
+      "scenarioName": "LECIPM Full Browser E2E (Playwright)",
+      "domain": "browser_e2e",
+      "steps": [
+        {
+          "stepId": "pw-skip",
+          "title": "Playwright browser suite",
+          "status": "NOT_CONFIRMED",
+          "details": "Skipped (E2E_SIMULATION_PLAYWRIGHT=0)",
+          "routeOrService": "tests/e2e",
+          "evidence": "not run",
+          "frictionPoints": [
+            "Set E2E_SIMULATION_PLAYWRIGHT=1 (default) with Next running"
+          ],
+          "blockers": []
+        }
+      ],
+      "recommendations": [
+        "Run with Next + DB + PRELAUNCH_TEST_PASSWORD for authenticated flows."
+      ],
+      "status": "NOT_CONFIRMED",
+      "summary": "LECIPM Full Browser E2E (Playwright): NOT_CONFIRMED (1 steps)"
+    }
+  ],
+  "criticalBlockers": [
+    "[bnhub_guest] Homepage loads: GET 0",
+    "HTTP 0",
+    "[bnhub_guest] BNHub stays page loads: GET 0",
+    "[bnhub_guest] BNHub hub entry loads: GET 0",
+    "[bnhub_guest] API ready probe: HTTP 0",
+    "[bnhub_host] BNHub host dashboard route (public shell): GET 0",
+    "[payments] API ready before payment checks: HTTP 0"
+  ],
+  "warnings": [
+    "[bnhub_guest] Booking checkout requires session (Stripe path): Unauthenticated GET returned 0",
+    "[bnhub_host] Host dashboard requires auth: Unauthenticated GET returned 0",
+    "[bnhub_host] Host payouts protected: Unauthenticated GET returned 0",
+    "[bnhub_host] Pricing suggestion API safe failure without auth/body: HTTP 0",
+    "broker: Residential Broker Flow: WARNING (4 steps)",
+    "[broker] Broker dashboard requires auth: Unauthenticated GET returned 0",
+    "[broker] Broker CRM protected: Unauthenticated GET returned 0",
+    "[broker] Broker pipeline protected: Unauthenticated GET returned 0",
+    "admin: Admin / Moderation Flow: WARNING (5 steps)",
+    "[admin] Admin root protected: Unauthenticated GET returned 0",
+    "[admin] BNHub admin area protected: Unauthenticated GET returned 0",
+    "[admin] Compliance queue protected: Unauthenticated GET returned 0",
+    "[admin] Fraud surface protected: Unauthenticated GET returned 0",
+    "[admin] Admin testing report API rejects anonymous: HTTP 0",
+    "founder: Founder / Owner Dashboard Flow: WARNING (4 steps)",
+    "[founder] CEO / executive surface protected: Unauthenticated GET returned 0",
+    "[founder] Execution dashboard protected: Unauthenticated GET returned 0",
+    "[founder] Investor dashboard protected: Unauthenticated GET returned 0",
+    "[founder] Strategy / LECIPM engines protected: Unauthenticated GET returned 0",
+    "mobile_broker: Mobile Broker Flow (service-level): NOT_CONFIRMED (4 steps)",
+    "[mobile_broker] Runtime broker mobile session + push inbox: Requires device/emulator or Expo E2E — not executed in Node simulation",
+    "ai_systems: AI Systems Flow: WARNING (3 steps)",
+    "[ai_systems] ROI calculator API returns structured response or feature-off 403: HTTP 0",
+    "[ai_systems] AI pricing suggestion requires auth (401 without session): HTTP 0",
+    "[payments] Booking checkout requires session (401/403): HTTP 0",
+    "[payments] Live Stripe + webhook + DB proof not executed (flag off): Set executeLiveStripeBooking or run CLI with LAUNCH_VALIDATION_RUN_STRIPE_E2E=1",
+    "failure_edge: Failure / Edge Cases: WARNING (4 steps)",
+    "[failure_edge] Stripe webhook rejects invalid body safely: HTTP 0",
+    "[failure_edge] Admin compliance API rejects anonymous: HTTP 0",
+    "browser_e2e: LECIPM Full Browser E2E (Playwright): NOT_CONFIRMED (1 steps)",
+    "[browser_e2e] Playwright browser suite: Skipped (E2E_SIMULATION_PLAYWRIGHT=0)"
+  ],
+  "recommendedFixesPriority": [
+    "Resolve critical FAIL steps before launch (see JSON report).",
+    "Run Expo app against staging with broker_test_user for true mobile validation.",
+    "Run with Next + DB + PRELAUNCH_TEST_PASSWORD for authenticated flows."
+  ],
+  "decision": "NO_GO",
+  "browserPlaywright": null
+}

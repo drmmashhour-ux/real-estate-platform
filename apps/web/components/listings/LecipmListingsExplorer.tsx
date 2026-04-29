@@ -116,6 +116,7 @@ function LecipmListingsExplorerInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const mobileBrowseFiltersRef = useRef<HTMLDivElement>(null);
   const { reset, applyPatch } = useSearchEngineContext();
 
   const [data, setData] = useState<Row[]>([]);
@@ -307,6 +308,9 @@ function LecipmListingsExplorerInner() {
     ? appliedFromUrl.propertyTypes[0]?.toUpperCase() ?? ""
     : appliedFromUrl.propertyType?.trim().toUpperCase() ?? "";
 
+  const isPropertyTypeSegmentSelected = (val: "" | "HOUSE" | "CONDO" | "APARTMENT") =>
+    val === "" ? selectedPropertyTypes === "" : selectedPropertyTypes === val;
+
   const setPropertyType = (t: "" | "HOUSE" | "CONDO" | "APARTMENT") => {
     if (!t) applyPatch({ propertyTypes: [], propertyType: "" });
     else applyPatch({ propertyTypes: [t], propertyType: "" });
@@ -359,8 +363,12 @@ function LecipmListingsExplorerInner() {
         ? "lg:grid-cols-[300px_minmax(0,1fr)]"
         : "";
 
-  const filterPanelInner = (
-    <div id="lecipm-filters" className="space-y-6">
+  const scrollMobileBrowseFiltersIntoView = useCallback(() => {
+    mobileBrowseFiltersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const renderBrowseFilters = (pfx: string, containerId?: string) => (
+    <div id={containerId} className="space-y-6">
       <div>
         <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-white/50">Location</label>
         <input
@@ -376,11 +384,11 @@ function LecipmListingsExplorerInner() {
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">Price (CAD)</p>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="sr-only" htmlFor="lecipm-min">
+            <label className="sr-only" htmlFor={`${pfx}-min`}>
               Minimum price
             </label>
             <input
-              id="lecipm-min"
+              id={`${pfx}-min`}
               type="number"
               min={0}
               step={1000}
@@ -394,11 +402,11 @@ function LecipmListingsExplorerInner() {
             />
           </div>
           <div>
-            <label className="sr-only" htmlFor="lecipm-max">
+            <label className="sr-only" htmlFor={`${pfx}-max`}>
               Maximum price
             </label>
             <input
-              id="lecipm-max"
+              id={`${pfx}-max`}
               type="number"
               min={0}
               step={1000}
@@ -452,7 +460,7 @@ function LecipmListingsExplorerInner() {
 
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">Property type</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {(
             [
               ["", "Any"],
@@ -462,11 +470,11 @@ function LecipmListingsExplorerInner() {
             ] as const
           ).map(([val, label]) => (
             <button
-              key={label}
+              key={val || "any"}
               type="button"
               onClick={() => setPropertyType(val)}
-              className={`min-h-[40px] rounded-2xl border px-4 py-2 text-sm font-medium transition ${
-                (val === "" && !selectedPropertyTypes) || selectedPropertyTypes === val
+              className={`flex min-h-[44px] w-full items-center justify-center rounded-2xl border px-3 py-2 text-center text-xs font-medium transition sm:text-sm ${
+                isPropertyTypeSegmentSelected(val)
                   ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]"
                   : "border-white/15 bg-[#111] text-white/80 hover:border-[#D4AF37]/35"
               }`}
@@ -795,21 +803,21 @@ function LecipmListingsExplorerInner() {
 
           <div className="w-full lg:w-auto lg:min-w-[14rem]">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-white/40">Property type</p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               {(
                 [
                   ["", "Any"],
                   ["HOUSE", "House"],
                   ["CONDO", "Condo"],
-                  ["APARTMENT", "Apt"],
+                  ["APARTMENT", "Apartment"],
                 ] as const
               ).map(([val, label]) => (
                 <button
-                  key={label}
+                  key={val || "any-strip"}
                   type="button"
                   onClick={() => setPropertyType(val)}
-                  className={`min-h-[40px] rounded-xl border px-2.5 text-xs font-medium sm:text-sm ${
-                    (val === "" && !selectedPropertyTypes) || selectedPropertyTypes === val
+                  className={`flex min-h-[40px] w-full items-center justify-center rounded-xl border px-2 text-center text-xs font-medium sm:min-h-[44px] sm:px-2.5 sm:text-sm ${
+                    isPropertyTypeSegmentSelected(val)
                       ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]"
                       : "border-white/15 text-white/75"
                   }`}
@@ -881,12 +889,13 @@ function LecipmListingsExplorerInner() {
           </form>
 
           <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
-            <Link
-              href={buyHubFullFiltersHref}
+            <button
+              type="button"
+              onClick={scrollMobileBrowseFiltersIntoView}
               className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#D4AF37]/40 px-4 text-sm font-semibold text-[#D4AF37] lg:hidden"
             >
               Filters
-            </Link>
+            </button>
             <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#D4AF37]/25 p-1">
               <button
                 type="button"
@@ -946,6 +955,29 @@ function LecipmListingsExplorerInner() {
 
       {topFilterStrip}
 
+      {/* Mobile: full filter controls (desktop has the same UI in the left sidebar).
+          Header "Filters" scrolls here so choices are visible without leaving the page. */}
+      <section
+        ref={mobileBrowseFiltersRef}
+        id="lecipm-browse-mobile-filters-section"
+        className="border-b border-[#D4AF37]/18 bg-[#080808] scroll-mt-[5.75rem] lg:hidden"
+        aria-label="Listing filters"
+      >
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
+          <h2 className="text-center font-serif text-xl tracking-wide text-[#D4AF37]">Filters</h2>
+          <p className="mt-1 text-center text-xs text-white/45">
+            Location, price, type, rooms, and amenities — synced with URL and sidebar on larger screens.
+          </p>
+          <div className="mt-5">{renderBrowseFilters("lecipm-m")}</div>
+          <Link
+            href={buyHubFullFiltersHref}
+            className="mt-5 flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-[#D4AF37]/35 px-4 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
+          >
+            Open advanced filters on Buy hub
+          </Link>
+        </div>
+      </section>
+
       {listingsInstantSummary ? (
         <section className="mx-auto max-w-6xl border-b border-[#D4AF37]/20 bg-black/40 px-4 py-4 sm:px-6">
           <p className="text-xs font-bold uppercase tracking-wide text-[#D4AF37]">Recommended opportunities</p>
@@ -998,7 +1030,7 @@ function LecipmListingsExplorerInner() {
           </div>
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/45">Quick adjust</p>
-            {filterPanelInner}
+            {renderBrowseFilters("lecipm-desk", "lecipm-filters")}
           </div>
         </aside>
 
