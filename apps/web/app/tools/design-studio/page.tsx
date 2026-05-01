@@ -285,7 +285,7 @@ export default function DesignStudioPage() {
               <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Export options</h2>
               <ul className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-400">
                 <li>
-                  <strong className="text-slate-800 dark:text-slate-200">Download design</strong> – In Canva, use File → Download to save as PNG, PDF, or JPG.
+                  <strong className="text-slate-800 dark:text-slate-200">Download design</strong> – In Canva, use File → Download and save the file as SVG.
                 </li>
                 <li>
                   <strong className="text-slate-800 dark:text-slate-200">Save to your dashboard</strong> – Paste your Canva design link below and click Save. It will appear under &quot;Your saved design(s)&quot; on your listing page. <strong className="text-emerald-600 dark:text-emerald-400">7-day free trial</strong> for all visitors, brokers, and partners; after that, a per-design fee of <strong className="font-bold text-slate-900 dark:text-slate-100">$5</strong> is added to your bill.
