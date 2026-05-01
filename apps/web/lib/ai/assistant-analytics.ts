@@ -7,7 +7,10 @@ export type AssistantAnalyticsEvent =
   | "assistant_listing_explained"
   | "assistant_compare_used"
   | "assistant_help_intent_used"
-  | "assistant_tts_used";
+  | "assistant_tts_used"
+  | "assistant_voice_conversation_started"
+  | "assistant_voice_conversation_ended"
+  | "assistant_voice_language_changed";
 
 export function trackAssistantEvent(
   eventType: AssistantAnalyticsEvent,

@@ -6,6 +6,7 @@ export type VoiceSearchHandlers = {
   onTranscript: (text: string) => void;
   onError?: (message: string, code?: string) => void;
   onListeningChange?: (listening: boolean) => void;
+  lang?: string;
 };
 
 export function isSpeechRecognitionSupported(): boolean {
@@ -53,7 +54,7 @@ export function startVoiceSearch(handlers: VoiceSearchHandlers): { stop: () => v
     return null;
   }
 
-  recognition.lang = "en-CA";
+  recognition.lang = handlers.lang ?? "en-CA";
   recognition.interimResults = false;
   recognition.continuous = false;
 
