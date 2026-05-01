@@ -25,6 +25,7 @@ This folder is the **LECIPM Project Architecture Workspace**: the canonical loca
 ## Brand & design system
 
 - **Brand guidelines:** [BRAND_GUIDELINES.md](BRAND_GUIDELINES.md) — logo, colors, typography, spacing, UI kit usage (`apps/web/config/*`, `components/ui/*`).
+- **Illustrator exercise (bird):** [EXERCISE_4_SHAPE_BUILDER_BIRD.md](EXERCISE_4_SHAPE_BUILDER_BIRD.md) — shape-first workflow for Exercise 4 using Shape Builder (`Shift + M`).
 
 ---
 
