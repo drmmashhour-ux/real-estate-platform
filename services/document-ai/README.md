@@ -13,7 +13,7 @@ Extracts structured data from land register PDFs: cadastre number, owner name, p
 
 ## Endpoints
 
-- **POST /analyze** — Body: multipart form with `file` (PDF). Optional: `document_id`. Returns extracted fields and confidence_score (0-1).
+- **POST /analyze** — Body: multipart form with `file` (PDF or Adobe Illustrator `.ai` exported with PDF compatibility). Optional: `document_id`. Returns extracted fields and confidence_score (0-1).
 
 Results are stored in the web-app (document_extractions, verification_matches). Use the web-app **GET /api/document-ai/results/:documentId** to retrieve stored results.
 
