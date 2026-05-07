@@ -24,10 +24,13 @@ const disableWebpackPersistentCache =
 
 const securityHeaders = buildHttpSecurityHeaders({ isProductionLike: isProd });
 
-/** TEMP: strip edge/browser caching so fresh middleware/HTML is served after deploy. Remove after verification (hurts `_next/static` CDN caching). */
-const forceNoStoreDocumentCache = [
-  { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
-] as const;
+/**
+ * Cache-Control: no-store was here temporarily for post-deploy freshness.
+ * REMOVED: it breaks Vercel edge/CDN caching for _next/static assets,
+ * causing significant performance regression. Use Vercel's instant rollback
+ * or `?v=` query params if stale-cache issues recur.
+ */
+const forceNoStoreDocumentCache: readonly { key: string; value: string }[] = [];
 
 const nextConfig: NextConfig = {
   /**
@@ -114,10 +117,13 @@ const nextConfig: NextConfig = {
    */
   webpack: (config, { dev, isServer }) => {
     if (!dev) {
-      /** Default off: minifier bugs mask real compile errors; set `NEXT_WEBPACK_MINIMIZE=1` for production-sized outputs. */
-      const enableMinify = process.env.NEXT_WEBPACK_MINIMIZE === "1";
+      /**
+       * Production minification ON by default. Set NEXT_WEBPACK_MINIMIZE=0
+       * to disable during debugging of minifier-specific issues.
+       */
+      const disableMinify = process.env.NEXT_WEBPACK_MINIMIZE === "0";
       config.optimization = config.optimization ?? {};
-      config.optimization.minimize = enableMinify;
+      config.optimization.minimize = !disableMinify;
     }
     if (!isServer) {
       config.resolve = config.resolve ?? {};

@@ -28,13 +28,21 @@ export function PsychologyInsightsClient({ adminBase, dashBase }: { adminBase: s
       .catch(() => setErr("Could not load call stats"));
   }, []);
 
-  const learn = typeof window !== "undefined" ? loadPsychologyLearning() : { outcomes: {}, states: {} };
-  const learnP =
-    typeof window !== "undefined" ? loadPersonalityLearning() : { outcomes: {}, strategyHits: {} };
-  const best = typeof window !== "undefined" ? bestPerformingStrategyKeys(8) : [];
-  const persRates = typeof window !== "undefined" ? personalityWinRates(6) : [];
-  const closerAgg = typeof window !== "undefined" ? loadCloserAnalytics() : null;
-  const closerRate = typeof window !== "undefined" ? closerDemoRate() : 0;
+  const [learn, setLearn] = useState<ReturnType<typeof loadPsychologyLearning>>({ outcomes: {}, states: {} });
+  const [learnP, setLearnP] = useState<ReturnType<typeof loadPersonalityLearning>>({ outcomes: {}, strategyHits: {} });
+  const [best, setBest] = useState<string[]>([]);
+  const [persRates, setPersRates] = useState<ReturnType<typeof personalityWinRates>>([]);
+  const [closerAgg, setCloserAgg] = useState<ReturnType<typeof loadCloserAnalytics>>(null);
+  const [closerRate, setCloserRate] = useState(0);
+
+  useEffect(() => {
+    setLearn(loadPsychologyLearning());
+    setLearnP(loadPersonalityLearning());
+    setBest(bestPerformingStrategyKeys(8));
+    setPersRates(personalityWinRates(6));
+    setCloserAgg(loadCloserAnalytics());
+    setCloserRate(closerDemoRate());
+  }, []);
 
   const topObjections = data?.stats?.topObjections ?? [];
   const byState = learn.states;
