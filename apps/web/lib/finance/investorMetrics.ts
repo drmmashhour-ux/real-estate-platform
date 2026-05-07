@@ -20,7 +20,7 @@ export type InvestorMetrics = {
  * Order 61 — confirmed marketplace rows with price snapshots. Net revenue: platform fee minus
  * fee share of refunds (proportional to `refundedAmountCents / finalCents` when &gt; 0).
  */
-export async function getInvestorMetrics(): Promise<InvestorMetrics> {
+async function getInvestorMetricsFromDb(): Promise<InvestorMetrics> {
   const rows = await db().booking.findMany({
     where: { status: "confirmed" },
     select: {
