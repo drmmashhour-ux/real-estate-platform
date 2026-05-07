@@ -155,4 +155,3 @@ export async function setLaunchPlanStartAt(userId: string, at: Date | null): Pro
 }
 
 export { getLaunchPhaseBand } from "@/lib/launch/launchDayPhase";
-export { LAUNCH_DAYS };
