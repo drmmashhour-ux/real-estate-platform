@@ -38,9 +38,12 @@ const nextConfig: NextConfig = {
    * real compile errors when minifier plugins misbehave (`WebpackError is not a constructor`).
    */
   experimental: {
-    /** Narrow parallelism for reproducible/stable CI/webpack behavior */
-    cpus: 1,
-    workerThreads: false,
+    /**
+     * Default parallelism (removed cpus:1 + workerThreads:false).
+     * Single-thread compilation accumulated memory without relief, contributing
+     * to OOM on this 4000+ module codebase. Default parallelism lets Node.js
+     * distribute compilation and GC more effectively.
+     */
   },
   /** Next.js 16 defaults to Turbopack; `next-pwa` injects webpack config — empty Turbopack block opts in explicitly. */
   turbopack: {},

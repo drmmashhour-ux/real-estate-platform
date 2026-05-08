@@ -1,13 +1,13 @@
+import { PrismaPg } from "@prisma/adapter-pg";
+
 /**
- * Prisma 7+: `schema.prisma` must not declare `url`; clients need `datasourceUrl`
- * when constructed. Next/Vercel provide `DATABASE_URL` from `.env.local` / project env.
+ * Prisma 7: requires driver adapter. datasourceUrl / datasources removed.
+ * Returns PrismaClient constructor options with @prisma/adapter-pg.
  */
-export function lecipmPrismaClientOptions(): { datasourceUrl: string } {
-  const u = process.env.DATABASE_URL?.trim();
-  if (!u) {
-    throw new Error(
-      "DATABASE_URL is not set — required for PrismaClient (LECIPM / Prisma 7+)."
-    );
+export function lecipmPrismaClientOptions(): { adapter: PrismaPg } {
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) {
+    throw new Error("DATABASE_URL is not set — required for PrismaClient (LECIPM).");
   }
-  return { datasourceUrl: u };
+  return { adapter: new PrismaPg({ connectionString: url }) };
 }

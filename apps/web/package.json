@@ -37,7 +37,7 @@
     "build:safe": "pnpm env:check && pnpm build",
     "dev:mem": "NODE_OPTIONS=--max-old-space-size=8192 next dev -H 0.0.0.0 -p 3001",
     "dev:3000": "next dev -H 0.0.0.0 -p 3000",
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "build": "NODE_OPTIONS=--max-old-space-size=16384 next build --webpack",
     "ci:integrity": "npx tsx scripts/check-repo-integrity.ts",
     "integrity:check": "npx tsx scripts/check-repo-integrity.ts",
     "validate:regulator-claims": "npx tsx scripts/check-regulator-marketing-claims.ts",
