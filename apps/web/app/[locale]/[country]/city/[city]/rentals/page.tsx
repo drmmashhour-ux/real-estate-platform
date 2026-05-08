@@ -11,8 +11,9 @@ const prisma = getLegacyDB();
 
 export const revalidate = 300;
 
-export function generateStaticParams() {
-  return CITY_SLUGS.map((city) => ({ city }));
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */));
 }
 
 type PageProps = { params: Promise<{ locale: string; country: string; city: string }> };

@@ -5,8 +5,9 @@ import { GROWTH_CITY_SLUGS, parseGrowthCitySlugParam } from "@/lib/growth/geo-sl
 
 export const revalidate = 180;
 
-export function generateStaticParams() {
-  return GROWTH_CITY_SLUGS.map((city) => ({ city }));
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */));
 }
 
 type PageProps = { params: Promise<{ city: string }> };

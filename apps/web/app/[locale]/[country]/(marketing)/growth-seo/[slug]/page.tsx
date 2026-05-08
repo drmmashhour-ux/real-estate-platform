@@ -25,8 +25,9 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   });
 }
 
-export function generateStaticParams() {
-  return listSeoLandingSlugs().map((slug) => ({ slug }));
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */));
 }
 
 export default async function GrowthSeoLandingPage(props: Props) {

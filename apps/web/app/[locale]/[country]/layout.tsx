@@ -35,13 +35,18 @@ type Props = {
   params: Promise<{ locale: string; country: string }>;
 };
 
-export function generateStaticParams() {
-  const out: { country: CountryCodeLower }[] = [];
-  for (const c of ROUTED_COUNTRY_SLUGS) {
-    out.push({ country: c });
-  }
-  return out;
-}
+/**
+ * Dynamic rendering for all pages under [locale]/[country].
+ *
+ * Static generation of 948+ pages × 2 locales causes build-time OOM.
+ * These pages depend on database content and authentication state,
+ * so dynamic rendering at request time is the correct approach.
+ *
+ * The previous generateStaticParams for country slugs has been removed.
+ * next-intl's generateStaticParams in [locale]/layout.tsx still provides
+ * locale variants for the locale shell.
+ */
+export const dynamic = "force-dynamic";
 
 export default async function CountryChromeLayout({ children, params }: Props) {
   const { locale, country: countryParam } = await params;

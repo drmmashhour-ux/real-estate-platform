@@ -12,8 +12,9 @@ export const revalidate = 600;
 
 export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  const staticParams = BLOG_POSTS.map((p) => ({ slug: p.slug }));
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */));
   try {
     const dbSlugs = await prisma.seoBlogPost.findMany({
       select: { slug: true },

@@ -2,13 +2,9 @@ import { notFound } from "next/navigation";
 import { AppStoreScreenshot } from "@/components/marketing/AppStoreScreenshot";
 import { APP_STORE_SLIDES, EXPORT_DIMENSIONS, getSlideBySlug, type ScreenshotPlatform } from "@/lib/marketing/app-store-screenshots";
 
-export function generateStaticParams() {
-  const platforms: ScreenshotPlatform[] = ["iphone", "android"];
-  return platforms.flatMap((platform) =>
-    APP_STORE_SLIDES.map((s) => ({
-      platform,
-      slug: s.slug,
-    }))
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */))
   );
 }
 

@@ -34,8 +34,9 @@ import { generateSeoCityModel, metadataForSeoModel } from "@/modules/seo-city/se
 
 export const revalidate = 120;
 
-export function generateStaticParams() {
-  return CITY_SLUGS.map((city) => ({ city }));
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */));
 }
 
 type PageProps = { params: Promise<{ city: string; locale: string; country: string }> };

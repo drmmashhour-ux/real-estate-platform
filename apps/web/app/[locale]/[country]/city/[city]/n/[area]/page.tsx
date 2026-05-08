@@ -9,8 +9,9 @@ export const revalidate = 300;
 
 type Props = { params: Promise<{ city: string; area: string }> };
 
-export function generateStaticParams() {
-  const out: { city: string; area: string }[] = [];
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */[] = [];
   for (const city of CITY_SLUGS) {
     for (const area of listNeighborhoodSlugs(city)) {
       out.push({ city, area });
