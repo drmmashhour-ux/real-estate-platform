@@ -15,7 +15,7 @@ async function getActivePolicy() {
 
 function hasForbiddenToken(j: string): string | null {
   const t = j.toLowerCase();
-  if (/\b(compliance|regulatory|oaciq|amfi|securities)\s*relax|override_legal|waive_legal|bypass_approval|financial_approval|autonomy_expand|messaging_blast|external_sms\w*)\b/i.test(t)) {
+  if (/\b(?:(?:compliance|regulatory|oaciq|amfi|securities)\s*relax|override_legal|waive_legal|bypass_approval|financial_approval|autonomy_expand|messaging_blast|external_sms\w*)\b/i.test(t)) {
     return "forbidden_intent_in_payload";
   }
   return null;

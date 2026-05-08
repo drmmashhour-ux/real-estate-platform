@@ -24,10 +24,13 @@ const disableWebpackPersistentCache =
 
 const securityHeaders = buildHttpSecurityHeaders({ isProductionLike: isProd });
 
-/** TEMP: strip edge/browser caching so fresh middleware/HTML is served after deploy. Remove after verification (hurts `_next/static` CDN caching). */
-const forceNoStoreDocumentCache = [
-  { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
-] as const;
+/**
+ * Cache-Control: no-store was here temporarily for post-deploy freshness.
+ * REMOVED: it breaks Vercel edge/CDN caching for _next/static assets,
+ * causing significant performance regression. Use Vercel's instant rollback
+ * or `?v=` query params if stale-cache issues recur.
+ */
+const forceNoStoreDocumentCache: readonly { key: string; value: string }[] = [];
 
 const nextConfig: NextConfig = {
   /**
@@ -35,9 +38,12 @@ const nextConfig: NextConfig = {
    * real compile errors when minifier plugins misbehave (`WebpackError is not a constructor`).
    */
   experimental: {
-    /** Narrow parallelism for reproducible/stable CI/webpack behavior */
-    cpus: 1,
-    workerThreads: false,
+    /**
+     * Default parallelism (removed cpus:1 + workerThreads:false).
+     * Single-thread compilation accumulated memory without relief, contributing
+     * to OOM on this 4000+ module codebase. Default parallelism lets Node.js
+     * distribute compilation and GC more effectively.
+     */
   },
   /** Next.js 16 defaults to Turbopack; `next-pwa` injects webpack config — empty Turbopack block opts in explicitly. */
   turbopack: {},
@@ -114,10 +120,13 @@ const nextConfig: NextConfig = {
    */
   webpack: (config, { dev, isServer }) => {
     if (!dev) {
-      /** Default off: minifier bugs mask real compile errors; set `NEXT_WEBPACK_MINIMIZE=1` for production-sized outputs. */
-      const enableMinify = process.env.NEXT_WEBPACK_MINIMIZE === "1";
+      /**
+       * Production minification ON by default. Set NEXT_WEBPACK_MINIMIZE=0
+       * to disable during debugging of minifier-specific issues.
+       */
+      const disableMinify = process.env.NEXT_WEBPACK_MINIMIZE === "0";
       config.optimization = config.optimization ?? {};
-      config.optimization.minimize = enableMinify;
+      config.optimization.minimize = !disableMinify;
     }
     if (!isServer) {
       config.resolve = config.resolve ?? {};

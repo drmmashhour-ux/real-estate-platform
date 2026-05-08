@@ -4,8 +4,7 @@ import { DealInvestorLoopService } from "@/lib/investor/deal-loop/deal-investor-
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { EntityComplianceGuard } from "@/lib/compliance/entity-compliance-guard";
 import { logActivity } from "@/lib/audit/activity-log";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthSession } from "@/lib/auth";
 
 const bodySchema = z.object({
   phase: z.enum([
@@ -25,7 +24,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getAuthSession() as { user?: { id?: string } } | null;
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

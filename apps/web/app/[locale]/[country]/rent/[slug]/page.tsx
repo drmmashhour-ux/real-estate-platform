@@ -9,8 +9,9 @@ export const revalidate = 180;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function generateStaticParams() {
-  return GROWTH_CITY_SLUGS.map((city) => ({ slug: city }));
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */));
 }
 
 type PageProps = { params: Promise<{ slug: string }> };

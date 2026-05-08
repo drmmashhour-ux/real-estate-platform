@@ -1,13 +1,13 @@
 import { createNoopPrismaClient } from "@repo/prisma-disabled-stub";
 import { PrismaClient } from "../generated/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {
   coreDB: ReturnType<typeof createCoreClient> | undefined;
 };
 
 /**
- * Prisma 7+ uses `.$extends` for middleware-style hooks (`.$use` is not available on the public client).
- * Observability: built-in `log` for query/error/warn, plus per-operation timing in `[DB]`.
+ * Prisma 7: requires driver adapter — no datasourceUrl / empty constructor.
  */
 function createCoreClient() {
   if (process.env.NEXT_PUBLIC_DISABLE_DB === "true") {
@@ -17,9 +17,10 @@ function createCoreClient() {
 }
 
 function createCoreClientReal() {
-  const log: Array<"query" | "error" | "warn"> = ["query", "error", "warn"];
-
-  const base = new PrismaClient({ log });
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) throw new Error("DATABASE_URL is not set — required for db-core.");
+  const adapter = new PrismaPg({ connectionString: url });
+  const base = new PrismaClient({ adapter });
 
   return base.$extends({
     query: {

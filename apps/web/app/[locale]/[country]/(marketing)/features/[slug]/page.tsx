@@ -13,8 +13,9 @@ type Props = { params: Promise<{ slug: string }> };
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
 
-export function generateStaticParams() {
-  return getAllPlatformFeatureSlugs().map((slug) => ({ slug }));
+/** generateStaticParams removed — parent layout uses force-dynamic.
+ * Re-enable if static generation is needed for this route in the future.
+ */));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

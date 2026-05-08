@@ -4,8 +4,15 @@ import { useEffect } from "react";
 import { LOCALE_COOKIE, UI_LOCALE_ENTRIES, type LocaleCode } from "@/lib/i18n/locales";
 
 /**
- * Syncs <html lang> and dir (LTR/RTL) from mi_locale cookie on mount.
- * Full copy translation is a separate effort; this prevents layout breakage for Arabic.
+ * @deprecated UNUSED — not imported anywhere. Do NOT mount this component:
+ * it reads dir from cookie independently, which can conflict with the
+ * server-rendered dir from root layout.tsx and I18nContext.tsx useLayoutEffect.
+ *
+ * Root layout sets dir from getLocale() (server) and I18nContext syncs on
+ * client via useLayoutEffect. This component would create a third source of
+ * truth and cause visible dir flashes.
+ *
+ * Kept for reference only. Remove in future cleanup.
  */
 export function LocaleAttributes() {
   useEffect(() => {
