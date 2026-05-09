@@ -6,6 +6,8 @@ node_modules/
 node_modules/.prisma
 src/generated/prisma
 **/generated/prisma
+**/prisma/generated/
+**/generated/client/
 .prisma
 
 # Prisma engines (OS-specific)

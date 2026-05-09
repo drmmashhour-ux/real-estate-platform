@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start -p 3040",
     "lint": "eslint .",
-    "postinstall": "prisma generate",
+    "postinstall": "node -e \"if(process.env.CI||process.env.VERCEL){console.log(\\\"[skip] prisma generate skipped in CI/Vercel\\\");process.exit(0)}\" || DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost:5432/placeholder} prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts"
