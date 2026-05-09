@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost:5432/placeholder} prisma generate",
     "build": "prisma generate && tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",

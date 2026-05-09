@@ -8,7 +8,7 @@
   "scripts": {
     "prisma:validate": "prisma validate --schema=./prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
-    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
+    "postinstall": "DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost:5432/placeholder} prisma generate --schema=./prisma/schema.prisma",
     "dev": "next dev -H 0.0.0.0 -p 3001 --webpack",
     "dev:3000": "next dev -H 0.0.0.0 -p 3000 --webpack",
     "build": "next build --webpack",
