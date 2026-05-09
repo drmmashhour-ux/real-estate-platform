@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "postinstall": "DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost:5432/placeholder} prisma generate",
+    "postinstall": "node -e \"if(process.env.CI||process.env.VERCEL){console.log(\"[skip] prisma generate skipped in CI/Vercel\");process.exit(0)}\" || DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost:5432/placeholder} prisma generate",
     "build": "prisma generate && tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
