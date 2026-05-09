@@ -8,7 +8,7 @@ describe("Route Registry", () => {
   });
 
   it("every route references a valid hub", () => {
-    const validHubs = ["core", "homes", "bnhub", "invest", "forms", "immocontact", "dr-brain", "compliance", "design-system"];
+    const validHubs = ["core", "homes", "bnhub", "invest", "forms", "immocontact", "dr-brain", "compliance", "admin", "growth", "design-system"];
     for (const r of PLATFORM_ROUTES) {
       expect(validHubs).toContain(r.hub);
     }

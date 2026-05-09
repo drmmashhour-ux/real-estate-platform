@@ -48,6 +48,12 @@ export const PLATFORM_ROUTES: readonly RouteDefinition[] = [
   { path: "/admin", label: "Admin", labelFr: "Admin", hub: "dr-brain", requiresAuth: true, requiresRole: ["ADMIN"], isPublic: false },
   { path: "/broker", label: "Broker", labelFr: "Courtier", hub: "dr-brain", requiresAuth: true, requiresRole: ["BROKER"], isPublic: false },
   { path: "/owner", label: "Owner", labelFr: "Propriétaire", hub: "dr-brain", requiresAuth: true, requiresRole: ["HOST"], isPublic: false },
+
+  // ─── Growth ───
+  { path: "/growth", label: "Growth", labelFr: "Croissance", hub: "growth", requiresAuth: true, requiresRole: ["ADMIN"], isPublic: false },
+
+  // ─── Compliance ───
+  { path: "/compliance", label: "Compliance", labelFr: "Conformité", hub: "compliance", requiresAuth: true, requiresRole: ["ADMIN", "BROKER"], isPublic: false },
 ] as const;
 
 export function getRoutesByHub(hubId: string): RouteDefinition[] {

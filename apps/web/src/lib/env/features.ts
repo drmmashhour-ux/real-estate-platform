@@ -46,6 +46,9 @@ export const FEATURE_COMPLIANCE = envFlag("FEATURE_COMPLIANCE", true);
  */
 export const FEATURE_COMPLIANCE_HARD_LOCK = envFlag("FEATURE_COMPLIANCE_HARD_LOCK", false);
 
+/** Growth — SEO pages, marketing automation. Default: ON (SEO pages are public). */
+export const FEATURE_GROWTH = envFlag("FEATURE_GROWTH", true);
+
 /** Design System — internal dev tool. Default: OFF. */
 export const FEATURE_DESIGN_SYSTEM = envFlag("FEATURE_DESIGN_SYSTEM", false);
 
@@ -62,6 +65,7 @@ export function isHubEnabled(featureFlag: string): boolean {
     FEATURE_IMMOCONTACT,
     FEATURE_DR_BRAIN,
     FEATURE_COMPLIANCE,
+    FEATURE_GROWTH,
     FEATURE_DESIGN_SYSTEM,
   };
   return flags[featureFlag] ?? false;

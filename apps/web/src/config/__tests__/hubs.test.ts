@@ -12,8 +12,10 @@ describe("Hub Registry", () => {
     expect(ids).toContain("immocontact");
     expect(ids).toContain("dr-brain");
     expect(ids).toContain("compliance");
+    expect(ids).toContain("admin");
+    expect(ids).toContain("growth");
     expect(ids).toContain("design-system");
-    expect(PLATFORM_HUBS.length).toBe(9);
+    expect(PLATFORM_HUBS.length).toBe(11);
   });
 
   it("has no duplicate hub ids", () => {
