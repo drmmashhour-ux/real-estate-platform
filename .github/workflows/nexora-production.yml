@@ -1,0 +1,64 @@
+name: Nexora production architecture
+
+on:
+  pull_request:
+    paths:
+      - "apps/api-gateway/**"
+      - "apps/dashboard/**"
+      - "apps/pos/**"
+      - "services/financial-core/**"
+      - "services/transaction-service/**"
+      - "services/merchant-service/**"
+      - "services/merchant-payment-platform/**"
+      - "packages/shared-types/**"
+      - "packages/ledger-core/**"
+      - "infrastructure/nexora/**"
+      - ".github/workflows/nexora-production.yml"
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: install, lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    env:
+      NEXORA_ENV: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @nexora/shared-types run lint
+      - run: pnpm --filter @nexora/shared-types test
+      - run: pnpm --filter @nexora/shared-types run build
+      - run: pnpm --filter @nexora/ledger-core run lint
+      - run: pnpm --filter @nexora/ledger-core test
+      - run: pnpm --filter @nexora/ledger-core run build
+      - run: pnpm --filter @merchant-payments/platform run lint
+      - run: pnpm --filter @merchant-payments/platform test
+      - run: pnpm --filter @merchant-payments/platform run build
+      - run: DATABASE_URL="postgresql://user:pass@localhost:5432/nexora" pnpm --filter @merchant-payments/platform exec prisma validate --schema prisma/schema.prisma
+      - run: pnpm --filter @nexora/api-gateway run lint
+      - run: pnpm --filter @nexora/api-gateway test
+      - run: pnpm --filter @nexora/api-gateway run build
+      - run: pnpm --filter @nexora/dashboard run lint
+      - run: pnpm --filter @nexora/dashboard test
+      - run: pnpm --filter @nexora/dashboard run build
+      - run: pnpm --filter @nexora/pos run lint
+      - run: pnpm --filter @nexora/pos test
+      - run: pnpm --filter @nexora/pos run build
+      - run: pnpm --filter @nexora/financial-core run lint
+      - run: pnpm --filter @nexora/financial-core test
+      - run: pnpm --filter @nexora/financial-core run build
+      - run: pnpm --filter @nexora/transaction-service run lint
+      - run: pnpm --filter @nexora/transaction-service test
+      - run: pnpm --filter @nexora/transaction-service run build
+      - run: pnpm --filter @nexora/merchant-service run lint
+      - run: pnpm --filter @nexora/merchant-service test
+      - run: pnpm --filter @nexora/merchant-service run build

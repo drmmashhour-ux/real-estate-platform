@@ -20,12 +20,27 @@ Booking payment processing with escrow-style hold, capture, refunds, payout prep
 
 ## Payment provider integration
 
-The service uses a **provider interface** (`src/provider/types.ts`). Two implementations are included:
+The service uses a **provider interface** (`src/provider/types.ts`). It is currently locked to mock mode:
 
-- **Mock provider** — Used when `STRIPE_SECRET_KEY` is not set. Simulates capture/refund in memory; `createIntent` throws (same PCI posture as Stripe mode).
-- **Stripe provider** — Set `STRIPE_SECRET_KEY` to use Stripe. `createIntent` is disabled (PCI); refunds/capture still use Stripe APIs on existing intents created via Checkout elsewhere.
+- **Mock provider** — The only resolvable provider. Simulates capture/refund in memory; `createIntent` throws (same PCI posture as production).
+- **Stripe provider** — Code remains present for future review, but provider resolution rejects `STRIPE_SECRET_KEY` and non-`mock` `SYBNB_FINANCIAL_MODE` values.
 
 To plug in another provider (e.g. Adyen), implement `PaymentProvider` and register it in `src/provider/index.ts` (e.g. via env or config).
+
+## Syria financial foundation
+
+The architecture-only Syria foundation lives under `src/syria-financial`. It prepares wallet, transaction, payout, provider stub, audit, event, merchant verification, risk, admin, and API hardening modules without mounting public routes or executing live payments.
+
+All Syria financial systems are off by default:
+
+- `FEATURE_SYRIA_WALLET`
+- `FEATURE_SYRIA_PAYOUTS`
+- `FEATURE_SYRIA_KYC`
+- `FEATURE_SYRIA_PROVIDER_QNB`
+- `FEATURE_SYRIA_PROVIDER_CHAMCASH`
+- `FEATURE_SYRIA_RISK_ENGINE`
+
+The only Syria providers are stubs: `provider_stub`, `provider_qnb_stub`, and `provider_chamcash_stub`.
 
 ## Configuration
 

@@ -1,0 +1,105 @@
+name: nexora-merchant-platform
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: nexora
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD: nexora_dev_password
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora -d nexora"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nexora
+
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: apps/api-gateway/Dockerfile
+    environment:
+      NEXORA_ENV: development
+      NEXORA_CURRENCY: USD
+      DATABASE_URL: postgresql://nexora:nexora_dev_password@postgres:5432/nexora
+      PORT: 4000
+    command: sh -c "pnpm --filter @merchant-payments/platform db:migrate:deploy && pnpm --filter @nexora/api-gateway start"
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      financial-core:
+        condition: service_started
+      transaction-service:
+        condition: service_started
+      merchant-service:
+        condition: service_started
+    networks:
+      - nexora
+
+  dashboard:
+    build:
+      context: ../..
+      dockerfile: apps/dashboard/Dockerfile
+    environment:
+      NEXORA_ENV: development
+      PORT: 4001
+    ports:
+      - "4001:4001"
+    depends_on:
+      - api-gateway
+    networks:
+      - nexora
+
+  pos:
+    build:
+      context: ../..
+      dockerfile: apps/pos/Dockerfile
+    environment:
+      NEXORA_ENV: development
+      PORT: 4002
+    ports:
+      - "4002:4002"
+    depends_on:
+      - api-gateway
+    networks:
+      - nexora
+
+  financial-core:
+    build:
+      context: ../..
+      dockerfile: services/financial-core/Dockerfile
+    environment:
+      NEXORA_ENV: development
+      NEXORA_CURRENCY: USD
+      PORT: 4100
+    networks:
+      - nexora
+
+  transaction-service:
+    build:
+      context: ../..
+      dockerfile: services/transaction-service/Dockerfile
+    environment:
+      NEXORA_ENV: development
+      PORT: 4101
+    networks:
+      - nexora
+
+  merchant-service:
+    build:
+      context: ../..
+      dockerfile: services/merchant-service/Dockerfile
+    environment:
+      NEXORA_ENV: development
+      PORT: 4102
+    networks:
+      - nexora
+
+networks:
+  nexora:
+    driver: bridge

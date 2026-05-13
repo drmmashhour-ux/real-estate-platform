@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductUserRole {
+  admin
+  merchant
+}
+
+enum ProductMerchantStatus {
+  pending
+  active
+  suspended
+}
+
+model ProductUser {
+  id         String          @id
+  email      String          @unique
+  role       ProductUserRole
+  merchantId String?
+  createdAt  DateTime        @default(now())
+  sessions   ProductSession[]
+
+  @@map("product_users")
+}
+
+model ProductSession {
+  id        String      @id
+  userId    String
+  user      ProductUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime    @default(now())
+
+  @@index([userId])
+  @@map("product_sessions")
+}
+
+model ProductMerchant {
+  id              String                @id
+  displayName     String
+  status          ProductMerchantStatus
+  platformFeeBps  Int
+  settlementDelay String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([status])
+  @@map("product_merchants")
+}
+
+model ProductTransactionMetadata {
+  id                   String   @id
+  merchantId            String
+  provider              String
+  amountMinor           Int
+  currency              String
+  status                String
+  ledgerTransactionIds  Json
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([merchantId])
+  @@index([status])
+  @@map("product_transaction_metadata")
+}
+
+model ProductSettlementBatch {
+  id                  String   @id
+  merchantId           String
+  status               String
+  delay                String
+  transactionIds       Json
+  ledgerTransactionIds Json
+  scheduledSettlementAt DateTime
+  createdAt            DateTime @default(now())
+
+  @@index([merchantId])
+  @@index([status])
+  @@map("product_settlement_batches")
+}
+
+model ProductAuditLog {
+  id            String   @id
+  category      String
+  action        String
+  actorUserId   String?
+  merchantId    String?
+  transactionId String?
+  correlationId String
+  metadata      Json
+  createdAt     DateTime @default(now())
+
+  @@index([correlationId])
+  @@index([category])
+  @@map("product_audit_logs")
+}
