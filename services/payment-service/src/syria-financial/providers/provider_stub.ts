@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { FinancialError } from "../common/errors.js";
-import { nowIso } from "../common/types.js";
+import { nowIso, type SyriaProviderCode } from "../common/types.js";
 import { sanitizeFinancialMetadata } from "../common/security.js";
 import {
   paymentIntentRequestSchema,
@@ -17,7 +17,7 @@ import {
 } from "./types.js";
 
 export class SyriaStubPaymentProvider implements SyriaPaymentProvider {
-  readonly code = "provider_stub";
+  readonly code: SyriaProviderCode = "provider_stub";
 
   async createPaymentIntent(request: PaymentIntentRequest): Promise<StubbedProviderResult> {
     const parsed = paymentIntentRequestSchema.parse(request);
