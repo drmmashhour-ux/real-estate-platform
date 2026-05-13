@@ -1,6 +1,6 @@
 # Merchant Payment Financial Core
 
-Brand-agnostic, mock-only foundation layer for merchant payment accounting. This package contains no product UI, no API gateway, and no live provider integrations.
+Brand-agnostic, mock-only foundation layer for merchant payment accounting with a decoupled Nexora brand and product presentation layer.
 
 ## Safety posture
 
@@ -10,6 +10,7 @@ Brand-agnostic, mock-only foundation layer for merchant payment accounting. This
 - Providers are mock-only: `MockVisaProvider`, `MockMastercardProvider`, `MockBankProvider`.
 - Financial state is ledger-derived only. No wallet balance mutation API exists.
 - All recorded and settled financial operations are immutable double-entry ledger transactions.
+- Product UI scaffolds are presentation-only and must consume API/read-model data; they do not execute payments.
 
 ## Folder structure
 
@@ -42,6 +43,16 @@ services/merchant-payment-platform
     │       ├── transactionService.ts
     │       └── types.ts
     ├── infrastructure/createPaymentPlatform.ts
+    ├── product
+    │   ├── brand/brandConfig.ts
+    │   ├── dashboard
+    │   │   ├── dashboardScaffold.ts
+    │   │   └── viewModels.ts
+    │   ├── design-system/tokens.ts
+    │   ├── pos/posScaffold.ts
+    │   └── ui
+    │       ├── html.ts
+    │       └── layout/dashboardShell.ts
     └── safety/financialSafetyGuard.ts
 ```
 
@@ -78,6 +89,19 @@ The `PaymentProvider` interface is ready for future bank/card adapter review, bu
 ## Settlement and reconciliation
 
 Settlement batches simulate T+1/T+2 processing, generate ledger-backed settlement postings, and can produce mocked reconciliation reports with `liveMoneyMoved: false`.
+
+## Nexora product identity layer
+
+The product layer is fully decoupled from financial core logic. It includes:
+
+- `brand/brandConfig.ts` — central Nexora identity with brand name, logo placeholder, support contact, light/dark theme mode, and design tokens.
+- `design-system/tokens.ts` — reusable colors, spacing, border radius, and typography tokens.
+- `ui/layout/dashboardShell.ts` — dashboard shell, sidebar navigation, and topbar rendering.
+- `dashboard/dashboardScaffold.ts` — scaffold pages for Overview, Transactions, Settlements, and Settings.
+- `dashboard/viewModels.ts` — read-only view model shaping from supplied ledger/transaction/settlement data.
+- `pos/posScaffold.ts` — mock product list, checkout screen, and digital receipt scaffold.
+
+This layer does not import the ledger engine, transaction service, settlement engine, provider registry, or safety guard. It accepts read models and renders HTML scaffolds only.
 
 ## Commands
 
