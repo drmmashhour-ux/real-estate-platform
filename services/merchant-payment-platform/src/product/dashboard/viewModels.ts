@@ -4,6 +4,8 @@ export interface MerchantDashboardReadModel {
   transactions: readonly DashboardTransactionRead[];
   settlements: readonly DashboardSettlementRead[];
   feeBalanceMinor: number;
+  revenueMinor: number;
+  platformFeeBps: number;
   dailyVolumeMinor: number;
   weeklyVolumeMinor: number;
   currency: string;
@@ -38,6 +40,7 @@ export function createDashboardReadModel(input: {
   transactions: readonly DashboardTransactionRead[];
   settlements: readonly DashboardSettlementRead[];
   feeBalanceMinor: number;
+  platformFeeBps?: number;
   now?: Date;
   currency?: string;
 }): MerchantDashboardReadModel {
@@ -52,6 +55,9 @@ export function createDashboardReadModel(input: {
   const weeklyVolumeMinor = input.transactions
     .filter((transaction) => transaction.createdAt >= startOfWeek)
     .reduce((sum, transaction) => sum + transaction.money.amountMinor, 0);
+  const revenueMinor = input.transactions
+    .filter((transaction) => ["recorded", "settled", "completed"].includes(transaction.status))
+    .reduce((sum, transaction) => sum + transaction.money.amountMinor, 0);
 
   return Object.freeze({
     merchantId: input.merchantId,
@@ -59,6 +65,8 @@ export function createDashboardReadModel(input: {
     transactions: Object.freeze([...input.transactions]),
     settlements: Object.freeze([...input.settlements]),
     feeBalanceMinor: input.feeBalanceMinor,
+    revenueMinor,
+    platformFeeBps: input.platformFeeBps ?? 0,
     dailyVolumeMinor,
     weeklyVolumeMinor,
     currency: input.currency ?? input.transactions[0]?.money.currency ?? "USD",

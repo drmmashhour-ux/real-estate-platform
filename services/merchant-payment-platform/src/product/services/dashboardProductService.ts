@@ -27,6 +27,7 @@ export class DashboardProductService {
       transactions,
       settlements,
       feeBalanceMinor: this.ledger.getAccountBalance(this.platformFeeAccountId),
+      platformFeeBps: merchant.feeConfiguration.platformFeeBps,
       currency: merchant.accounts.merchantAccount.currency,
     });
   }

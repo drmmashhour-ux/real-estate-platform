@@ -19,6 +19,7 @@ const NAVIGATION: readonly NavigationItem[] = Object.freeze([
   { label: "Overview", href: "/dashboard/overview" },
   { label: "Transactions", href: "/dashboard/transactions" },
   { label: "Settlements", href: "/dashboard/settlements" },
+  { label: "Fees", href: "/dashboard/fees" },
   { label: "Settings", href: "/dashboard/settings" },
 ]);
 
@@ -50,6 +51,11 @@ export function renderDashboardShell(input: DashboardShellInput): string {
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: ${tokens.spacing.sm}; border-bottom: 1px solid ${tokens.colors.border}; }
     .muted { color: ${tokens.colors.textMuted}; }
+    .status { border-radius: ${tokens.radii.pill}; padding: ${tokens.spacing.xs} ${tokens.spacing.sm}; font-size: ${tokens.typography.sizes.xs}; }
+    .status.neutral { background: ${tokens.colors.border}; color: ${tokens.colors.text}; }
+    .status.success { background: rgba(22, 163, 74, 0.16); color: ${tokens.colors.success}; }
+    .status.warning { background: rgba(217, 119, 6, 0.16); color: ${tokens.colors.warning}; }
+    .status.danger { background: rgba(220, 38, 38, 0.16); color: ${tokens.colors.danger}; }
   </style>
 </head>
 <body>

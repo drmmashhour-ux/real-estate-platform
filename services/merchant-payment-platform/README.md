@@ -113,7 +113,10 @@ The product layer is fully decoupled from financial core logic. It includes:
 - `ui/layout/dashboardShell.ts` — dashboard shell, sidebar navigation, and topbar rendering.
 - `dashboard/dashboardScaffold.ts` — scaffold pages for Overview, Transactions, Settlements, and Settings.
 - `dashboard/viewModels.ts` — read-only view model shaping from supplied ledger/transaction/settlement data.
-- `pos/posScaffold.ts` — mock product list, checkout screen, and digital receipt scaffold.
+- `ui/components.ts` — reusable cards, KPI tiles, buttons, status badges, and data tables.
+- `receipt/receiptScaffold.ts` — digital receipt component with merchant name, amount, timestamp, transaction ID, and status.
+- `pos/posScaffold.ts` — mock product list, amount input, checkout status, and receipt scaffold.
+- `api-client/nexoraApiClient.ts` — UI-facing API consumption contract; mock implementation only.
 
 This layer does not import the ledger engine, transaction service, settlement engine, provider registry, or safety guard. It accepts read models and renders HTML scaffolds only.
 

@@ -1,5 +1,7 @@
 import type { BrandIdentity } from "../brand/brandConfig.js";
+import { renderButton, renderCard, renderStatusBadge, statusTone } from "../ui/components.js";
 import { escapeHtml, renderCurrency } from "../ui/html.js";
+import { renderReceiptCard, type ReceiptViewModel } from "../receipt/receiptScaffold.js";
 
 export interface PosProduct {
   id: string;
@@ -11,8 +13,10 @@ export interface PosProduct {
 export interface PosScaffoldState {
   merchantId: string;
   products: readonly PosProduct[];
-  checkoutStatus: "idle" | "created" | "confirmed";
+  amountInputMinor?: number;
+  checkoutStatus: "idle" | "pending" | "success";
   receiptId?: string;
+  receipt?: ReceiptViewModel;
 }
 
 export const mockPosProducts: readonly PosProduct[] = Object.freeze([
@@ -57,15 +61,13 @@ export function renderPosScaffold(state: PosScaffoldState, brand: BrandIdentity)
       <div class="panel">
         <h2>Checkout</h2>
         <p class="muted">Merchant: ${escapeHtml(state.merchantId)}</p>
-        <h3>${renderCurrency(total, currency)}</h3>
-        <p>Status: ${escapeHtml(state.checkoutStatus)}</p>
-        <button type="button">Create transaction request</button>
+        <label>Amount</label>
+        <input value="${renderCurrency(state.amountInputMinor ?? total, currency)}" readonly />
+        <p>Status: ${renderStatusBadge(state.checkoutStatus, statusTone(state.checkoutStatus))}</p>
+        ${renderButton("Create transaction request", tokens)}
       </div>
     </section>
-    <section class="panel">
-      <h2>Digital receipt</h2>
-      <p>Receipt: ${escapeHtml(state.receiptId ?? "not generated")}</p>
-    </section>
+    ${state.receipt ? renderReceiptCard(state.receipt, brand) : renderCard(`<h2>Digital receipt</h2><p>Receipt: ${escapeHtml(state.receiptId ?? "not generated")}</p>`)}
   </main>
 </body>
 </html>`;
