@@ -7,6 +7,7 @@
 - Prisma `Syria*` models mapped to `syria_*` tables.
 - Required `FEATURE_SYRIA_*` flags, all off by default.
 - Global read-only safety guard requiring `SYBNB_FINANCIAL_MODE=mock` or unset, and rejecting live provider keys or truthy live execution flags.
+- Payment-service provider resolver now fails closed if `STRIPE_SECRET_KEY` is present or `SYBNB_FINANCIAL_MODE` is not `mock`.
 
 ## 2. Remaining gaps
 
@@ -58,6 +59,7 @@ Statuses are runtime-safe: `pending`, `authorized`, `processing`, `completed`, `
 - Public Syria financial APIs.
 - Non-mock financial module initialization.
 - Live provider environment keys and production execution switches.
+- Payment-service Stripe provider resolution.
 
 ## 11. What is SAFE for preview
 

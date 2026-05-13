@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 import {
   createPreparedSyriaTransaction,
@@ -64,6 +65,30 @@ test("Syria financial safety guard rejects non-mock and live provider settings",
     () => getSyriaFinancialFeatureFlags({ FEATURE_SYRIA_PROVIDER_QNB: "true" }),
     /reject live provider/,
   );
+});
+
+test("payment service provider resolver rejects Stripe initialization", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--import",
+      "tsx",
+      "--input-type=module",
+      "-e",
+      "import { getPaymentProvider } from './src/provider/index.ts'; try { getPaymentProvider(); process.exit(2); } catch (error) { if (!String(error?.message ?? error).includes('locked to mock mode')) process.exit(3); }",
+    ],
+    {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        STRIPE_SECRET_KEY: "sk_live_test",
+        SYBNB_FINANCIAL_MODE: "mock",
+      },
+      encoding: "utf8",
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
 });
 
 test("provider stubs validate but never execute live payments", async () => {

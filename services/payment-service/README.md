@@ -20,10 +20,10 @@ Booking payment processing with escrow-style hold, capture, refunds, payout prep
 
 ## Payment provider integration
 
-The service uses a **provider interface** (`src/provider/types.ts`). Two implementations are included:
+The service uses a **provider interface** (`src/provider/types.ts`). It is currently locked to mock mode:
 
-- **Mock provider** — Used when `STRIPE_SECRET_KEY` is not set. Simulates capture/refund in memory; `createIntent` throws (same PCI posture as Stripe mode).
-- **Stripe provider** — Set `STRIPE_SECRET_KEY` to use Stripe. `createIntent` is disabled (PCI); refunds/capture still use Stripe APIs on existing intents created via Checkout elsewhere.
+- **Mock provider** — The only resolvable provider. Simulates capture/refund in memory; `createIntent` throws (same PCI posture as production).
+- **Stripe provider** — Code remains present for future review, but provider resolution rejects `STRIPE_SECRET_KEY` and non-`mock` `SYBNB_FINANCIAL_MODE` values.
 
 To plug in another provider (e.g. Adyen), implement `PaymentProvider` and register it in `src/provider/index.ts` (e.g. via env or config).
 
