@@ -130,6 +130,29 @@ The productization backend keeps the boundary `UI/POS -> API Gateway -> Product 
 
 The PostgreSQL persistence design lives in `prisma/schema.prisma`; it stores product users, sessions, merchant records, transaction metadata, settlement batches, and product audit logs. The financial ledger remains isolated in the core package.
 
+## Production engineering layer
+
+Nexora deployable skeletons live in the monorepo production structure:
+
+- `apps/api-gateway` — typed product gateway entrypoint with safe runtime config, structured logs, and correlation IDs.
+- `apps/dashboard` — dashboard shell app consuming product read models.
+- `apps/pos` — POS shell app consuming gateway/product presentation contracts.
+- `services/financial-core` — mock-only financial core runtime wrapper.
+- `services/transaction-service` — transaction service runtime skeleton.
+- `services/merchant-service` — merchant service runtime skeleton.
+- `packages/shared-types` — shared API envelopes, runtime environment validation, correlation IDs, structured logger.
+- `packages/ledger-core` — reusable ledger-core exports from the financial core package.
+
+`services/auth-service` already exists in the parent monorepo, so the Nexora productization layer uses `product/auth/*` for mock JWT/RBAC and does not overwrite the existing service.
+
+Docker orchestration is available with:
+
+```bash
+pnpm docker:nexora:up
+```
+
+CI/CD preparation is defined in `.github/workflows/nexora-production.yml`. It installs dependencies, lints, tests, and builds the Nexora packages/apps/services. It does not deploy.
+
 ## Commands
 
 ```bash
