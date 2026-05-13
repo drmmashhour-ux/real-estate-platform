@@ -12,7 +12,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/generated/**\"",
+    "typecheck": "tsc --noEmit",
+    "test:syria-financial": "tsx src/syria-financial/tests/run.ts"
   },
   "dependencies": {
     "express": "^4.21.0",

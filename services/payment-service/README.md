@@ -8,6 +8,7 @@ Booking payment processing with escrow-style hold, capture, refunds, payout prep
 - **Confirm (capture)** — Capture a held intent; marks payment COMPLETED and creates a **payout preparation** record for the host.
 - **Refunds** — Full or partial refund; updates payment to REFUNDED and appends to transaction history.
 - **Transaction history** — List all transactions (INTENT_CREATED, INTENT_HELD, CAPTURED, REFUNDED, PAYOUT_PREPARED, PAYOUT_SENT) with filters by `paymentId`, `bookingId`, `type`, plus pagination.
+- **Syria financial foundation** — Architecture-only modules under `src/syria-financial` for future Syrian wallet, transaction, payout, provider, merchant verification, audit, risk, admin, API-hardening, and database readiness. All feature flags are off by default and no live provider is connected.
 
 ## APIs
 
@@ -52,6 +53,8 @@ npm run start
 npm run db:generate
 npm run db:push
 npm run db:migrate
+npm run typecheck
+npm run test:syria-financial
 ```
 
 ## Reference

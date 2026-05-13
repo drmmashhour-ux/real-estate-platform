@@ -214,3 +214,271 @@ model PayoutPayment {
   @@id([payoutId, paymentId])
   @@index([paymentId])
 }
+
+// ---------------------------------------------------------------------------
+// Syria financial foundation (architecture-only; no live payment execution)
+// ---------------------------------------------------------------------------
+enum SyriaFinancialTransactionStatus {
+  PENDING
+  AUTHORIZED
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+  DISPUTED
+}
+
+enum SyriaFinancialPayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SyriaFinancialAuditEventType {
+  PAYMENT_ATTEMPT
+  PAYOUT_ATTEMPT
+  VERIFICATION_CHANGE
+  ADMIN_ACTION
+  SUSPICIOUS_EVENT
+  PROVIDER_FAILURE
+  API_FAILURE
+}
+
+enum SyriaFinancialKycStatus {
+  NOT_STARTED
+  PENDING
+  APPROVED
+  REJECTED
+  REQUIRES_MORE_INFO
+}
+
+enum SyriaFinancialVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum SyriaFinancialApprovalWorkflowStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum SyriaFinancialRiskSignalType {
+  DUPLICATE_PAYMENT
+  VELOCITY
+  SUSPICIOUS_IP
+  REPEATED_FAILURE
+  PROVIDER_ANOMALY
+}
+
+model SyriaFinancialTransaction {
+  id              String                            @id @default(uuid())
+  provider        String                            @db.VarChar(64)
+  amount          Int
+  currency        String                            @db.VarChar(3)
+  bookingId       String
+  payerId         String
+  merchantId      String
+  status          SyriaFinancialTransactionStatus   @default(PENDING)
+  idempotencyKey  String?
+  retryAttempt    Int                               @default(0)
+  maxRetryAttempts Int                              @default(3)
+  nextRetryAt     DateTime?
+  metadata        Json                              @default("{}")
+  auditTrail      Json                              @default("[]")
+  createdAt       DateTime                          @default(now())
+  updatedAt       DateTime                          @updatedAt
+  completedAt     DateTime?
+  deletedAt       DateTime?
+
+  @@unique([provider, idempotencyKey])
+  @@index([bookingId])
+  @@index([payerId])
+  @@index([merchantId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("syria_financial_transactions")
+}
+
+model SyriaFinancialWallet {
+  id              String                              @id @default(uuid())
+  merchantId      String
+  currency        String                              @db.VarChar(3)
+  availableBalance Int                                @default(0)
+  pendingBalance   Int                                @default(0)
+  payoutBalance    Int                                @default(0)
+  refundBalance    Int                                @default(0)
+  holdBalance      Int                                @default(0)
+  ledgerEntries    SyriaFinancialWalletLedgerEntry[]
+  createdAt       DateTime                            @default(now())
+  updatedAt       DateTime                            @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([merchantId, currency])
+  @@index([merchantId])
+  @@map("syria_financial_wallets")
+}
+
+model SyriaFinancialWalletLedgerEntry {
+  id                      String                 @id @default(uuid())
+  walletId                String
+  wallet                  SyriaFinancialWallet   @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  immutableTransactionId  String
+  referenceType           String                 @db.VarChar(64)
+  referenceId             String
+  balanceDelta            Json                   @default("{}")
+  metadata                Json                   @default("{}")
+  correlationId           String
+  createdAt               DateTime               @default(now())
+
+  @@unique([walletId, immutableTransactionId])
+  @@index([referenceType, referenceId])
+  @@index([correlationId])
+  @@index([createdAt])
+  @@map("syria_financial_wallet_ledger_entries")
+}
+
+model SyriaFinancialPayout {
+  id                    String                       @id @default(uuid())
+  merchantId            String
+  provider              String                       @db.VarChar(64)
+  amount                Int
+  currency              String                       @db.VarChar(3)
+  destinationReference  String?
+  status                SyriaFinancialPayoutStatus   @default(PENDING)
+  idempotencyKey        String?
+  providerPayoutId      String?
+  metadata              Json                         @default("{}")
+  auditTrail            Json                         @default("[]")
+  correlationId         String
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  completedAt           DateTime?
+  deletedAt             DateTime?
+
+  @@unique([provider, idempotencyKey])
+  @@index([merchantId])
+  @@index([status])
+  @@index([correlationId])
+  @@map("syria_financial_payouts")
+}
+
+model SyriaFinancialProviderEvent {
+  id               String    @id @default(uuid())
+  provider         String    @db.VarChar(64)
+  eventType        String    @db.VarChar(128)
+  providerEventId  String?
+  processingStatus String    @db.VarChar(64)
+  metadata         Json      @default("{}")
+  correlationId    String
+  receivedAt       DateTime  @default(now())
+  processedAt      DateTime?
+  deletedAt        DateTime?
+
+  @@unique([provider, providerEventId])
+  @@index([provider])
+  @@index([eventType])
+  @@index([processingStatus])
+  @@index([correlationId])
+  @@map("syria_financial_provider_events")
+}
+
+model SyriaFinancialAuditLog {
+  id             String                         @id @default(uuid())
+  eventType      SyriaFinancialAuditEventType
+  actorType      String                         @db.VarChar(64)
+  actorId        String?
+  targetType     String                         @db.VarChar(128)
+  targetId       String?
+  correlationId  String
+  metadata       Json                           @default("{}")
+  createdAt      DateTime                       @default(now())
+
+  @@index([eventType])
+  @@index([actorType, actorId])
+  @@index([targetType, targetId])
+  @@index([correlationId])
+  @@index([createdAt])
+  @@map("syria_financial_audit_logs")
+}
+
+model SyriaFinancialPaymentEvent {
+  id                String    @id @default(uuid())
+  provider          String    @db.VarChar(64)
+  eventType         String    @db.VarChar(128)
+  providerEventId   String?
+  processingStatus  String    @db.VarChar(64)
+  metadata          Json      @default("{}")
+  correlationId     String
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+  deletedAt         DateTime?
+
+  @@index([provider])
+  @@index([eventType])
+  @@index([processingStatus])
+  @@index([correlationId])
+  @@map("syria_financial_payment_events")
+}
+
+model SyriaFinancialMerchantProfile {
+  id                             String                                  @id @default(uuid())
+  merchantId                     String                                  @unique
+  displayName                    String
+  countryCode                    String                                  @default("SY") @db.VarChar(2)
+  kycStatus                      SyriaFinancialKycStatus                 @default(NOT_STARTED)
+  identityVerificationStatus     SyriaFinancialVerificationStatus        @default(UNVERIFIED)
+  bankAccountVerificationStatus  SyriaFinancialVerificationStatus        @default(UNVERIFIED)
+  approvalWorkflowStatus         SyriaFinancialApprovalWorkflowStatus    @default(DRAFT)
+  metadata                       Json                                    @default("{}")
+  documents                      SyriaFinancialMerchantDocument[]
+  createdAt                      DateTime                                @default(now())
+  updatedAt                      DateTime                                @updatedAt
+  deletedAt                      DateTime?
+
+  @@index([kycStatus])
+  @@index([approvalWorkflowStatus])
+  @@map("syria_financial_merchant_profiles")
+}
+
+model SyriaFinancialMerchantDocument {
+  id              String                         @id @default(uuid())
+  merchantProfileId String
+  merchantProfile   SyriaFinancialMerchantProfile @relation(fields: [merchantProfileId], references: [id], onDelete: Restrict)
+  documentType    String                         @db.VarChar(64)
+  storageRef      String
+  checksum        String?
+  exposedPublicly Boolean                        @default(false)
+  metadata        Json                           @default("{}")
+  uploadedAt      DateTime                       @default(now())
+  deletedAt       DateTime?
+
+  @@index([merchantProfileId])
+  @@index([documentType])
+  @@map("syria_financial_merchant_documents")
+}
+
+model SyriaFinancialRiskSignal {
+  id             String                         @id @default(uuid())
+  signalType     SyriaFinancialRiskSignalType
+  subjectId      String
+  severity       String                         @db.VarChar(32)
+  passiveOnly    Boolean                        @default(true)
+  metadata       Json                           @default("{}")
+  correlationId  String
+  observedAt     DateTime                       @default(now())
+  deletedAt      DateTime?
+
+  @@index([signalType])
+  @@index([subjectId])
+  @@index([severity])
+  @@index([correlationId])
+  @@index([observedAt])
+  @@map("syria_financial_risk_signals")
+}
