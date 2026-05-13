@@ -27,6 +27,21 @@ The service uses a **provider interface** (`src/provider/types.ts`). Two impleme
 
 To plug in another provider (e.g. Adyen), implement `PaymentProvider` and register it in `src/provider/index.ts` (e.g. via env or config).
 
+## Syria financial foundation
+
+The architecture-only Syria foundation lives under `src/syria-financial`. It prepares wallet, transaction, payout, provider stub, audit, event, merchant verification, risk, admin, and API hardening modules without mounting public routes or executing live payments.
+
+All Syria financial systems are off by default:
+
+- `FEATURE_SYRIA_WALLET`
+- `FEATURE_SYRIA_PAYOUTS`
+- `FEATURE_SYRIA_KYC`
+- `FEATURE_SYRIA_PROVIDER_QNB`
+- `FEATURE_SYRIA_PROVIDER_CHAMCASH`
+- `FEATURE_SYRIA_RISK_ENGINE`
+
+The only Syria providers are stubs: `provider_stub`, `provider_qnb_stub`, and `provider_chamcash_stub`.
+
 ## Configuration
 
 - `PORT` — default `3006`
