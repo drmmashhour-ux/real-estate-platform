@@ -1,12 +1,10 @@
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
-import {
-  FSBO_ALLOWED_IMAGE_MIME,
-  FSBO_MAX_IMAGE_BYTES,
-} from "@/lib/fsbo/media-config";
+import { FSBO_ALLOWED_IMAGE_MIME, FSBO_MAX_IMAGE_BYTES } from "@/lib/fsbo/media-config";
 import { uploadFsboListingImage } from "@/lib/fsbo/upload-fsbo-listing-image";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
 import { getFsboMaxPhotosForSellerPlan } from "@/lib/fsbo/photo-limits";
+import { logError } from "@/lib/logging";
 import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +13,7 @@ export const dynamic = "force-dynamic";
  * POST multipart/form-data: field `file` — one image (jpeg/png/webp), max 5MB.
  * Owner-only; listing must exist (any non-SOLD status for edits).
  */
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   const userId = await getGuestId();
   if (!userId) {
@@ -86,7 +81,12 @@ export async function POST(
     if (ext === "webp") return { buffer, contentType: "image/webp" };
 
     // Optional HEIC/HEIF support: convert to JPG.
-    if (ext === "heic" || ext === "heif" || inputType === "image/heic" || inputType === "image/heif") {
+    if (
+      ext === "heic" ||
+      ext === "heif" ||
+      inputType === "image/heic" ||
+      inputType === "image/heif"
+    ) {
       const converted = await sharp(buffer).jpeg({ quality: 85 }).toBuffer();
       return { buffer: converted, contentType: "image/jpeg" };
     }
@@ -110,6 +110,11 @@ export async function POST(
         { status: 400 }
       );
     }
-    return Response.json({ error: message }, { status: 500 });
+    logError("api_fsbo_listing_upload_failed", {
+      action: "POST /api/fsbo/listings/[id]/upload",
+      meta: { listingId: id },
+      err: e,
+    });
+    return Response.json({ error: "Upload failed. Please try again." }, { status: 500 });
   }
 }
