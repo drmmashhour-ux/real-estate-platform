@@ -5,10 +5,29 @@ import { getGuestId } from "@/lib/auth/session";
 import { assertCanCreateListing } from "@/lib/compliance/professional-compliance";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
+import { logError } from "@/lib/logging";
 import {
   logSearchRelevanceDebug,
   sortListingsBySearchRelevance,
 } from "@/lib/bnhub/listings-search-relevance";
+
+type ListingCreatePayload = {
+  title?: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  country?: string;
+  cadastre_number?: string;
+  listing_authority_type?: string;
+  nightPriceCents?: number | string | null;
+  beds?: number | string | null;
+  baths?: number | string | null;
+  maxGuests?: number | string | null;
+  photos?: unknown;
+  amenities?: unknown;
+  houseRules?: unknown;
+};
 
 /**
  * GET /api/listings — Search listings (MVP alias for BNHub search).
@@ -61,7 +80,7 @@ export async function GET(request: NextRequest) {
 
     return Response.json(ordered);
   } catch (e) {
-    console.error(e);
+    logError("api_listings_search_failed", { action: "GET /api/listings", err: e });
     return Response.json({ error: "Failed to fetch listings" }, { status: 500 });
   }
 }
@@ -76,7 +95,12 @@ export async function POST(request: NextRequest) {
     const ownerId = await getGuestId();
     if (!ownerId) return Response.json({ error: "Sign in required" }, { status: 401 });
 
-    const body = await request.json();
+    let body: ListingCreatePayload;
+    try {
+      body = (await request.json()) as ListingCreatePayload;
+    } catch {
+      return Response.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
     const {
       title,
       description,
@@ -95,13 +119,14 @@ export async function POST(request: NextRequest) {
       houseRules,
     } = body;
     if (!title || !address || !city) {
-      return Response.json(
-        { error: "title, address, city required" },
-        { status: 400 }
-      );
+      return Response.json({ error: "title, address, city required" }, { status: 400 });
     }
     const listingAuthorityType =
-      listing_authority_type === "broker" ? "BROKER" : listing_authority_type === "owner" ? "OWNER" : undefined;
+      listing_authority_type === "broker"
+        ? "BROKER"
+        : listing_authority_type === "owner"
+          ? "OWNER"
+          : undefined;
     const createGate = await assertCanCreateListing({
       userId: ownerId,
       listingAuthorityType: listingAuthorityType ?? "OWNER",
@@ -138,10 +163,7 @@ export async function POST(request: NextRequest) {
     });
     return Response.json(listing);
   } catch (e) {
-    console.error(e);
-    return Response.json(
-      { error: e instanceof Error ? e.message : "Failed to create listing" },
-      { status: 400 }
-    );
+    logError("api_listings_create_failed", { action: "POST /api/listings", err: e });
+    return Response.json({ error: "Failed to create listing" }, { status: 500 });
   }
 }

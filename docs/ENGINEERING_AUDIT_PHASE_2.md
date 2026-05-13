@@ -1,0 +1,34 @@
+# Engineering Audit Phase 2
+
+Status: hardening audit for preview-safe stabilization. Nothing was deployed, merged, or pushed to `main`.
+
+## Findings
+
+| Issue                                                                                                                          | Severity | Affected modules                    | Recommended fix strategy                                                                                              | Status                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------ | -------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Middleware outer catch failed open without visibility.                                                                         | High     | Core, admin, dashboard, API gateway | Log structured failure metadata and keep request ID fallback. Consider fail-closed for sensitive gates after QA.      | Fixed now: `middleware_fallback` logging added.          |
+| SSR locale could use `ar` or `fr` even when launch flags disallow that locale, causing client correction/hydration risk.       | High     | Core, locale, Syria                 | Clamp server `initialLocale` to `localeAllowListFromFlags`.                                                           | Fixed now.                                               |
+| Raw API errors were logged with `console.error(e)` and some client responses exposed internal error messages.                  | High     | Homes, BNHub listings, uploads      | Log server-side with structured logger; return stable public messages. Expand route wrapper adoption over time.       | Partially fixed now for `/api/listings` and FSBO upload. |
+| Investment/compliance features lacked direct fail-closed tests.                                                                | High     | Invest, compliance                  | Add tests for env unset, DB null, DB error, explicit enablement, and 403 response.                                    | Fixed now.                                               |
+| Launch flag DB keys could drift from centralized `launchFlags`.                                                                | High     | Core, Syria, locale, feature flags  | Export and test DB key mapping against centralized flag object.                                                       | Fixed now.                                               |
+| Two module trees (`apps/web/modules` and `apps/web/src/modules`) split ownership.                                              | Medium   | BNHub, growth, AI, revenue, trust   | Document canonical boundaries, add import-boundary linting later, migrate stable server code incrementally.           | Postponed; boundary docs added.                          |
+| Trust/fraud module coupling creates circular dependency risk.                                                                  | Medium   | Compliance, trust-score, fraud-risk | Extract shared listing/address signal helpers to a neutral module with scoring snapshots.                             | Postponed.                                               |
+| Giant client files increase bundle and regression risk.                                                                        | Medium   | BNHub, invest, homes, admin         | Split only with visual/E2E coverage: `bnhub-search-client.tsx`, `analyze-deal-client.tsx`, `SellerListingWizard.tsx`. | Postponed.                                               |
+| Root providers compose analytics, demo, onboarding, toasts, product health, compare, and assistant globally.                   | Medium   | Core, growth, design-system         | Split provider groups and lazy-mount non-critical widgets by segment after smoke coverage.                            | Postponed.                                               |
+| Many API handlers parse JSON with `req.json().catch(() => ({}))`.                                                              | Medium   | API, homes, mortgage, mobile        | Use schema validation on auth, billing, uploads, and compliance routes first.                                         | Postponed; invalid JSON guard added to `/api/listings`.  |
+| Internal APIs use heterogeneous secrets and per-handler protection.                                                            | Medium   | Admin, growth, BNHub, internal cron | Introduce one internal auth helper/policy and route manifest tests.                                                   | Postponed.                                               |
+| Route explosion and sparse segment boundaries: hundreds of pages, no root `error.tsx` / `global-error.tsx`, few `loading.tsx`. | Medium   | Admin, homes, BNHub, growth         | Add route manifest, then prioritized boundaries for admin, checkout, listings, and BNHub.                             | Postponed.                                               |
+| Direct `process.env` access is widespread.                                                                                     | Medium   | Core, API, growth, BNHub, billing   | Continue centralizing new env reads into env/flag modules; add lint rule later.                                       | Postponed.                                               |
+| `packages/ui` is a stub while `apps/web/components/ui` owns real primitives.                                                   | Low      | Design-system                       | Add local UI README and narrow app-level barrel; migrate only mature primitives later.                                | Fixed now: local barrel and README added.                |
+| Dead/confusing routes such as `/admin/settings` redirect target and `/listings/not-found` literal path remain.                 | Low      | Admin, homes, routing               | Add route manifest check before deleting or moving files.                                                             | Postponed.                                               |
+
+## Module hardening summary
+
+Detailed module ownership notes are in `docs/MODULE_HARDENING_NOTES.md`.
+
+- Core: runtime logging, launch locale clamping, middleware visibility, and safety tests improved.
+- Homes: listing API and FSBO upload errors hardened; large seller UI split postponed.
+- BNHub: boundary debt documented; physical moves postponed.
+- Invest/compliance: fail-closed guard tests added.
+- Forms/immocontact/admin/growth/dr-brain: ownership notes added; refactors postponed.
+- Design-system: local README and stable barrel added for mature primitives.

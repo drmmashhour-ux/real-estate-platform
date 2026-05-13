@@ -19,11 +19,9 @@ import {
 import { isDemoMode } from "@/lib/demo-mode";
 import { isDemoModeApiMutationAllowed } from "@/lib/demo-mode-allowlist";
 import { DemoEvents } from "@/lib/demo-event-types";
+import { logError, logWarning } from "@/lib/logging";
 import { REQUEST_ID_HEADER } from "@/lib/middleware/request-logger";
-import {
-  hasRawCardLikePayload,
-  jsonResponseRawCardBlocked,
-} from "@/lib/security/blockRawCardData";
+import { hasRawCardLikePayload, jsonResponseRawCardBlocked } from "@/lib/security/blockRawCardData";
 import { isSecureCookieContext } from "@/lib/runtime-env";
 import { isPublicBrowseSurface } from "@/lib/routing/public-browse-paths";
 import { HUB_USER_ROLE_COOKIE } from "@/lib/staging-middleware-config";
@@ -33,8 +31,13 @@ function isPublicPathForStaging(pathname: string): boolean {
   if (pathname.startsWith("/_next")) return true;
   if (pathname.startsWith("/auth")) return true;
   if (pathname.startsWith("/embed")) return true;
-  if (pathname === "/favicon.ico" || pathname === "/manifest.json" || pathname === "/robots.txt") return true;
-  if (pathname.startsWith("/images/") || pathname.startsWith("/brand/") || pathname.startsWith("/branding/"))
+  if (pathname === "/favicon.ico" || pathname === "/manifest.json" || pathname === "/robots.txt")
+    return true;
+  if (
+    pathname.startsWith("/images/") ||
+    pathname.startsWith("/brand/") ||
+    pathname.startsWith("/branding/")
+  )
     return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
   if (pathname === "/api/health" || pathname === "/api/ready") return true;
@@ -99,7 +102,11 @@ export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
 
-    if (request.method === "POST" && pathname.startsWith("/api/") && !pathname.includes("webhook")) {
+    if (
+      request.method === "POST" &&
+      pathname.startsWith("/api/") &&
+      !pathname.includes("webhook")
+    ) {
       const ct = request.headers.get("content-type") ?? "";
       if (ct.includes("application/json")) {
         try {
@@ -122,7 +129,10 @@ export async function middleware(request: NextRequest) {
 
     if (isDemoMode() && pathname.startsWith("/api/")) {
       const m = request.method.toUpperCase();
-      if (["POST", "PUT", "PATCH", "DELETE"].includes(m) && !isDemoModeApiMutationAllowed(pathname, m)) {
+      if (
+        ["POST", "PUT", "PATCH", "DELETE"].includes(m) &&
+        !isDemoModeApiMutationAllowed(pathname, m)
+      ) {
         console.warn("[DEMO MODE] Blocked write attempt:", { route: pathname, method: m });
         const secret = process.env.CRON_SECRET?.trim();
         if (secret && process.env.NEXT_PUBLIC_ENV === "staging") {
@@ -144,7 +154,17 @@ export async function middleware(request: NextRequest) {
                 userRole,
               },
             }),
-          }).catch(() => {});
+          }).catch((err) => {
+            logWarning("middleware_demo_event_failed", {
+              action: "demo_mode",
+              meta: { path: pathname, method: m },
+            });
+            logError("middleware_demo_event_error", {
+              action: "demo_mode",
+              meta: { path: pathname, method: m },
+              err,
+            });
+          });
         }
         const res = NextResponse.json(
           { error: "Demo mode — this action is disabled", code: "DEMO_MODE" },
@@ -174,7 +194,10 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/demo")) {
       const requestHeaders = ensureRequestIdHeader(request);
       requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+      return applyAttributionCookie(
+        request,
+        NextResponse.next({ request: { headers: requestHeaders } })
+      );
     }
 
     if (pathname.startsWith("/compare") && !pathname.startsWith("/compare/fsbo")) {
@@ -186,7 +209,10 @@ export async function middleware(request: NextRequest) {
       }
       const requestHeaders = ensureRequestIdHeader(request);
       requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+      return applyAttributionCookie(
+        request,
+        NextResponse.next({ request: { headers: requestHeaders } })
+      );
     }
 
     if (pathname.startsWith("/dashboard")) {
@@ -198,7 +224,10 @@ export async function middleware(request: NextRequest) {
       }
       const requestHeaders = ensureRequestIdHeader(request);
       requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+      return applyAttributionCookie(
+        request,
+        NextResponse.next({ request: { headers: requestHeaders } })
+      );
     }
 
     if (pathname.startsWith("/admin")) {
@@ -209,7 +238,8 @@ export async function middleware(request: NextRequest) {
         return redirectWithRequestId(request, login);
       }
       /** Edge gate (cookie mirrors DB role at login). Layout still enforces Prisma role. */
-      const role = request.cookies.get(HUB_USER_ROLE_COOKIE_NAME)?.value?.trim().toUpperCase() ?? "";
+      const role =
+        request.cookies.get(HUB_USER_ROLE_COOKIE_NAME)?.value?.trim().toUpperCase() ?? "";
       if (role !== "ADMIN" && role !== "ACCOUNTANT") {
         const dash = request.nextUrl.clone();
         dash.pathname = "/dashboard";
@@ -218,7 +248,10 @@ export async function middleware(request: NextRequest) {
       }
       const requestHeaders = ensureRequestIdHeader(request);
       requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+      return applyAttributionCookie(
+        request,
+        NextResponse.next({ request: { headers: requestHeaders } })
+      );
     }
 
     if (pathname.startsWith("/api/dashboard")) {
@@ -299,13 +332,19 @@ export async function middleware(request: NextRequest) {
     }
 
     return applyAttributionCookie(request, withRequestId(request));
-  } catch {
+  } catch (err) {
+    logError("middleware_fallback", {
+      action: "middleware",
+      meta: {
+        path: request.nextUrl.pathname,
+        method: request.method,
+      },
+      err,
+    });
     return withRequestId(request);
   }
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

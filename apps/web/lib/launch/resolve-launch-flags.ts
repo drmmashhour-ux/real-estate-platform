@@ -31,7 +31,7 @@ export function clearLaunchFlagsCache() {
 }
 
 /** Maps DB key suffix (after `launch:`) to LaunchFlagKey */
-const LAUNCH_FLAG_DB_KEYS: Record<string, LaunchFlagKey> = {
+export const LAUNCH_FLAG_DB_KEYS: Record<string, LaunchFlagKey> = {
   enableArabic: "enableArabic",
   enableFrench: "enableFrench",
   enableSyriaMarket: "enableSyriaMarket",

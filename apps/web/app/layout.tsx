@@ -10,7 +10,6 @@ import FloatingContact from "@/components/ui/FloatingContact";
 import { BrowserHistoryNav } from "@/components/ui/BrowserHistoryNav";
 import { ImmoChatWidgetLazy } from "@/components/immo/ImmoChatWidgetLazy";
 import { AppProviders } from "@/app/providers";
-import { SkipLinks } from "@/components/accessibility/SkipLinks";
 import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
 import { TestModeBanner } from "@/components/layout/TestModeBanner";
 import { DebugPanel } from "@/components/DebugPanel";
@@ -96,17 +95,15 @@ export const viewport: Viewport = {
   themeColor: "#0b0b0b",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   /** English default; `mi_locale` or saved profile locale when authenticated. */
   const initialLocale = await resolveInitialLocale(cookieStore);
   const launchFlags = await resolveLaunchFlags();
   const allowedLocales = localeAllowListFromFlags(launchFlags);
-  const localeEntry = UI_LOCALE_ENTRIES.find((l) => l.code === initialLocale) ?? UI_LOCALE_ENTRIES[0];
+  const effectiveInitialLocale = allowedLocales.includes(initialLocale) ? initialLocale : "en";
+  const localeEntry =
+    UI_LOCALE_ENTRIES.find((l) => l.code === effectiveInitialLocale) ?? UI_LOCALE_ENTRIES[0];
   const arabicShell = localeEntry.code === "ar";
 
   return (
@@ -115,16 +112,17 @@ export default async function RootLayout({
       dir={localeEntry.rtl ? "rtl" : "ltr"}
       className={`${inter.variable} ${cormorant.variable}${arabicShell ? ` ${notoArabic.variable}` : ""}`}
     >
-      <body
-        className={`${inter.className} min-h-screen bg-[#0B0B0B] text-white antialiased`}
-      >
-        <AppProviders initialLocale={initialLocale} allowedLocales={allowedLocales}>
+      <body className={`${inter.className} min-h-screen bg-[#0B0B0B] text-white antialiased`}>
+        <AppProviders initialLocale={effectiveInitialLocale} allowedLocales={allowedLocales}>
           <div className="flex min-h-screen flex-col">
             <HeaderGate />
             <DemoModeBanner />
             <TestModeBanner />
 
-            <main id="main-content" className="flex min-h-0 flex-1 flex-col overflow-x-hidden pb-28">
+            <main
+              id="main-content"
+              className="flex min-h-0 flex-1 flex-col overflow-x-hidden pb-28"
+            >
               <InvestmentShellChrome>{children}</InvestmentShellChrome>
             </main>
 
