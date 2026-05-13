@@ -7,6 +7,8 @@ import type { TransactionService } from "../transactions/transactionService.js";
 import type { SettlementBatch } from "./types.js";
 
 export class SettlementEngine {
+  private readonly batches: SettlementBatch[] = [];
+
   constructor(
     private readonly ledger: LedgerEngine,
     private readonly merchantService: MerchantService,
@@ -75,7 +77,7 @@ export class SettlementEngine {
       this.transactionService.markSettled(transactionId, ledgerTransaction.id, input.correlationId);
     }
 
-    return Object.freeze({
+    const batch = Object.freeze({
       id: randomUUID(),
       merchantId: input.merchantId,
       delay: merchant.settlementRules.delay,
@@ -93,5 +95,11 @@ export class SettlementEngine {
       ]),
       createdAt,
     });
+    this.batches.push(batch);
+    return batch;
+  }
+
+  listBatches(): readonly SettlementBatch[] {
+    return Object.freeze([...this.batches]);
   }
 }

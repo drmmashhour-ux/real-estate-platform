@@ -4,9 +4,14 @@ import { MerchantService } from "../domain/merchants/merchantService.js";
 import { PosService } from "../domain/pos/posService.js";
 import { SettlementEngine } from "../domain/settlements/settlementEngine.js";
 import { TransactionService } from "../domain/transactions/transactionService.js";
+import { createProductLayer } from "../product/createProductLayer.js";
+import type { BrandConfiguration } from "../product/brand/brandConfig.js";
 import { assertFinancialSafety } from "../safety/financialSafetyGuard.js";
 
-export function createPaymentPlatform(currency = "USD") {
+export function createPaymentPlatform(
+  currency = "USD",
+  brandOverrides: Partial<BrandConfiguration> = {},
+) {
   assertFinancialSafety();
   const ledger = new LedgerEngine();
   const platformFeeAccount = ledger.addAccount(
@@ -25,7 +30,7 @@ export function createPaymentPlatform(currency = "USD") {
   const settlements = new SettlementEngine(ledger, merchants, transactions, settlementAccount);
   const pos = new PosService(transactions);
 
-  return {
+  const core = {
     ledger,
     merchants,
     transactions,
@@ -35,5 +40,11 @@ export function createPaymentPlatform(currency = "USD") {
       platformFeeAccount,
       settlementAccount,
     },
+  };
+  const product = createProductLayer(core, brandOverrides);
+
+  return {
+    ...core,
+    product,
   };
 }
