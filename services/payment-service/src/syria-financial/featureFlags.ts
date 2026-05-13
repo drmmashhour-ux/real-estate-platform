@@ -1,4 +1,5 @@
 import { SyriaFinancialError } from "./errors.js";
+import { assertSyriaFinancialReadOnlyMode } from "./safetyGuard.js";
 
 export const SYRIA_FINANCIAL_FEATURE_FLAG_NAMES = [
   "FEATURE_SYRIA_WALLET",
@@ -12,13 +13,12 @@ export const SYRIA_FINANCIAL_FEATURE_FLAG_NAMES = [
 export type SyriaFinancialFeatureFlag = (typeof SYRIA_FINANCIAL_FEATURE_FLAG_NAMES)[number];
 export type SyriaFinancialFeatureFlagState = Record<SyriaFinancialFeatureFlag, boolean>;
 
-const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
-
 export function getSyriaFinancialFeatureFlags(
   env: NodeJS.ProcessEnv = process.env,
 ): SyriaFinancialFeatureFlagState {
+  assertSyriaFinancialReadOnlyMode(env);
   return SYRIA_FINANCIAL_FEATURE_FLAG_NAMES.reduce((state, flag) => {
-    state[flag] = TRUE_VALUES.has((env[flag] ?? "").trim().toLowerCase());
+    state[flag] = false;
     return state;
   }, {} as SyriaFinancialFeatureFlagState);
 }

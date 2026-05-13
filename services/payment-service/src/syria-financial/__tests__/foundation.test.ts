@@ -4,6 +4,7 @@ import {
   createPreparedSyriaTransaction,
   createSyriaFinancialAuditLog,
   getSyriaFinancialFeatureFlags,
+  getSyriaFinancialSafetyState,
   getSyriaPaymentProvider,
   redactFinancialSecrets,
   transitionSyriaTransaction,
@@ -22,6 +23,47 @@ test("Syria financial feature flags default off", () => {
     FEATURE_SYRIA_PROVIDER_CHAMCASH: false,
     FEATURE_SYRIA_RISK_ENGINE: false,
   });
+});
+
+test("Syria financial feature flags remain hard-off when env tries to enable non-live flags", () => {
+  assert.deepEqual(
+    getSyriaFinancialFeatureFlags({
+      SYBNB_FINANCIAL_MODE: "mock",
+      FEATURE_SYRIA_WALLET: "true",
+      FEATURE_SYRIA_KYC: "1",
+      FEATURE_SYRIA_RISK_ENGINE: "on",
+    }),
+    {
+      FEATURE_SYRIA_WALLET: false,
+      FEATURE_SYRIA_PAYOUTS: false,
+      FEATURE_SYRIA_KYC: false,
+      FEATURE_SYRIA_PROVIDER_QNB: false,
+      FEATURE_SYRIA_PROVIDER_CHAMCASH: false,
+      FEATURE_SYRIA_RISK_ENGINE: false,
+    },
+  );
+});
+
+test("Syria financial safety guard rejects non-mock and live provider settings", () => {
+  assert.deepEqual(getSyriaFinancialSafetyState({}), {
+    mode: "mock",
+    readOnly: true,
+    liveProvidersAllowed: false,
+    blockedEnvKeys: [],
+  });
+
+  assert.throws(
+    () => getSyriaFinancialSafetyState({ SYBNB_FINANCIAL_MODE: "production" }),
+    /locked to mock read-only mode/,
+  );
+  assert.throws(
+    () => getSyriaFinancialSafetyState({ STRIPE_SECRET_KEY: "sk_live_test" }),
+    /reject live provider/,
+  );
+  assert.throws(
+    () => getSyriaFinancialFeatureFlags({ FEATURE_SYRIA_PROVIDER_QNB: "true" }),
+    /reject live provider/,
+  );
 });
 
 test("provider stubs validate but never execute live payments", async () => {

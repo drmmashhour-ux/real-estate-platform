@@ -8,7 +8,8 @@ This namespace prepares SYBNB financial architecture for future Syrian provider 
 - Does not import from `apps/web`.
 - Does not mount public routes.
 - Does not connect to Stripe, Cham Cash, QNB Syria, Mastercard, or bank transfer rails.
-- Uses `FEATURE_SYRIA_*` flags, all off by default.
+- Uses `FEATURE_SYRIA_*` flags, hard-off in read-only mode.
+- Requires `SYBNB_FINANCIAL_MODE` to be unset or `mock`; live provider keys and live execution flags are rejected.
 
 ## Modules
 

@@ -6,6 +6,7 @@
 - Transaction engine, wallet foundation, payout preparation, provider stubs, payment events, merchant verification, audit logs, risk monitoring, admin dashboard structures, and API hardening helpers.
 - Prisma `Syria*` models mapped to `syria_*` tables.
 - Required `FEATURE_SYRIA_*` flags, all off by default.
+- Global read-only safety guard requiring `SYBNB_FINANCIAL_MODE=mock` or unset, and rejecting live provider keys or truthy live execution flags.
 
 ## 2. Remaining gaps
 
@@ -55,6 +56,8 @@ Statuses are runtime-safe: `pending`, `authorized`, `processing`, `completed`, `
 - Real payouts.
 - Stripe live mode changes.
 - Public Syria financial APIs.
+- Non-mock financial module initialization.
+- Live provider environment keys and production execution switches.
 
 ## 11. What is SAFE for preview
 

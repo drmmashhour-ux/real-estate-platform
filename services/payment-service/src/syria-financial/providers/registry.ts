@@ -1,4 +1,5 @@
 import { assertSyriaFinancialFeatureEnabled } from "../featureFlags.js";
+import { assertSyriaFinancialReadOnlyMode } from "../safetyGuard.js";
 import { SyriaChamCashStubPaymentProvider } from "./providerChamcashStub.js";
 import { SyriaQnbStubPaymentProvider } from "./providerQnbStub.js";
 import { SyriaStubPaymentProvider } from "./providerStub.js";
@@ -15,6 +16,7 @@ const providers: Record<SyriaPaymentProviderId, SyriaPaymentProvider> = {
 };
 
 export function getSyriaPaymentProvider(providerId: SyriaPaymentProviderId): SyriaPaymentProvider {
+  assertSyriaFinancialReadOnlyMode();
   const parsedProviderId = syriaPaymentProviderIdSchema.parse(providerId);
   return providers[parsedProviderId];
 }

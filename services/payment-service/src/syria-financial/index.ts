@@ -1,6 +1,7 @@
 export * from "./constants.js";
 export * from "./errors.js";
 export * from "./featureFlags.js";
+export * from "./safetyGuard.js";
 export * from "./security.js";
 
 export * from "./admin/dashboardFoundation.js";
