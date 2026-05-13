@@ -25,6 +25,7 @@ export * from "./product/dashboard/dashboardScaffold.js";
 export * from "./product/dashboard/viewModels.js";
 export * from "./product/design-system/tokens.js";
 export * from "./product/persistence/persistencePorts.js";
+export * from "./product/persistence/prismaRepositories.js";
 export * from "./product/pos/posScaffold.js";
 export * from "./product/pos-integration/posApiClient.js";
 export * from "./product/receipt/receiptScaffold.js";

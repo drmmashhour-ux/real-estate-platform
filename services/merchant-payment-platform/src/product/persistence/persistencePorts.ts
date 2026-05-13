@@ -44,6 +44,22 @@ export interface ProductPersistencePort {
   saveUser(record: UserRecord): void;
 }
 
+export interface MerchantRepository {
+  save(record: MerchantRecord): Promise<void> | void;
+}
+
+export interface TransactionRepository {
+  saveMetadata(record: TransactionMetadataRecord): Promise<void> | void;
+}
+
+export interface UserRepository {
+  save(record: UserRecord): Promise<void> | void;
+}
+
+export interface SettlementRepository {
+  saveBatch(record: SettlementBatchRecord): Promise<void> | void;
+}
+
 export class InMemoryProductPersistence implements ProductPersistencePort {
   readonly merchants = new Map<string, MerchantRecord>();
   readonly transactions = new Map<string, TransactionMetadataRecord>();

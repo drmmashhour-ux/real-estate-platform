@@ -43,6 +43,7 @@ jobs:
       - run: pnpm --filter @merchant-payments/platform run lint
       - run: pnpm --filter @merchant-payments/platform test
       - run: pnpm --filter @merchant-payments/platform run build
+      - run: DATABASE_URL="postgresql://user:pass@localhost:5432/nexora" pnpm --filter @merchant-payments/platform exec prisma validate --schema prisma/schema.prisma
       - run: pnpm --filter @nexora/api-gateway run lint
       - run: pnpm --filter @nexora/api-gateway test
       - run: pnpm --filter @nexora/api-gateway run build

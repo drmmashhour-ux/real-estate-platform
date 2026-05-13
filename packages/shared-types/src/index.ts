@@ -20,6 +20,10 @@ export interface ServiceHealth {
   checkedAt: string;
 }
 
+export interface MetricsSnapshot {
+  counters: Readonly<Record<string, number>>;
+}
+
 export interface LoggerContext {
   service: string;
   environment: NexoraEnvironment;
@@ -96,6 +100,20 @@ export class StructuredLogger {
         timestamp: new Date().toISOString(),
       }),
     );
+  }
+}
+
+export class MetricsCollector {
+  private readonly counters = new Map<string, number>();
+
+  increment(name: string, amount = 1): void {
+    this.counters.set(name, (this.counters.get(name) ?? 0) + amount);
+  }
+
+  snapshot(): MetricsSnapshot {
+    return {
+      counters: Object.freeze(Object.fromEntries(this.counters.entries())),
+    };
   }
 }
 
