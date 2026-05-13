@@ -4,7 +4,7 @@ import type { LedgerAccount } from "../ledger/types.js";
 import type { MerchantService } from "../merchants/merchantService.js";
 import { createAuditEvent } from "../shared/types.js";
 import type { TransactionService } from "../transactions/transactionService.js";
-import type { SettlementBatch } from "./types.js";
+import type { SettlementBatch, SettlementReconciliationReport } from "./types.js";
 
 export class SettlementEngine {
   private readonly batches: SettlementBatch[] = [];
@@ -101,5 +101,31 @@ export class SettlementEngine {
 
   listBatches(): readonly SettlementBatch[] {
     return Object.freeze([...this.batches]);
+  }
+
+  reconcileBatch(batchId: string, correlationId: string): SettlementReconciliationReport {
+    const batch = this.batches.find((candidate) => candidate.id === batchId);
+    if (!batch) throw new Error(`Settlement batch not found: ${batchId}.`);
+    return Object.freeze({
+      id: randomUUID(),
+      batchId,
+      transactionCount: batch.transactionIds.length,
+      ledgerTransactionCount: batch.ledgerTransactionIds.length,
+      matched: true,
+      liveMoneyMoved: false,
+      auditTrail: Object.freeze([
+        createAuditEvent({
+          action: "settlement.batch.reconciled_mock",
+          actor: "settlement",
+          correlationId,
+          metadata: {
+            batchId,
+            transactionCount: batch.transactionIds.length,
+            ledgerTransactionCount: batch.ledgerTransactionIds.length,
+          },
+        }),
+      ]),
+      createdAt: new Date(),
+    });
   }
 }

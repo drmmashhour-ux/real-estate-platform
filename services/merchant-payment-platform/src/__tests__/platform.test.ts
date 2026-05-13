@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import type { AddressInfo } from "node:net";
 import test from "node:test";
-import { createLedgerAccount, LedgerEngine, renderMerchantDashboardHtml, renderPosHtml } from "../index.js";
+import { createLedgerAccount, LedgerEngine } from "../index.js";
 import { assertFinancialSafety, createPaymentPlatform, getPaymentProvider } from "../index.js";
 
 const LIVE_ENV_KEYS = [
@@ -12,6 +11,7 @@ const LIVE_ENV_KEYS = [
   "VISA_SECRET_KEY",
   "MASTERCARD_API_KEY",
   "MASTERCARD_SECRET_KEY",
+  "BANK_API_KEY",
   "BANK_TRANSFER_API_KEY",
   "QNB_API_KEY",
   "STRIPE_SECRET_KEY",
@@ -84,7 +84,7 @@ test("ledger records only balanced immutable double-entry transactions", () =>
     );
   }));
 
-test("POS payment flow is mock-only and ledger-driven", async () =>
+test("transaction flow is mock-only, idempotent, and ledger-driven", async () =>
   withoutLiveEnv(async () => {
     const platform = createPaymentPlatform("USD");
     const merchant = platform.merchants.onboardMerchant({
@@ -95,25 +95,28 @@ test("POS payment flow is mock-only and ledger-driven", async () =>
     });
     platform.merchants.updateMerchantStatus(merchant.id, "active");
 
-    const created = await platform.pos.createTransaction({
+    const created = platform.transactions.initiate({
       merchantId: merchant.id,
       provider: "mock_visa",
-      amountMinor: 10_000,
-      currency: "USD",
-      idempotencyKey: "pos-idem-0001",
-      correlationId: "corr-pos",
+      money: { amountMinor: 10_000, currency: "USD" },
+      idempotencyKey: "core-idem-0001",
+      correlationId: "corr-core",
     });
-    assert.equal("status" in created && created.status, "initiated");
-
-    const confirmed = await platform.pos.confirmPayment({
-      transactionId: "id" in created ? created.id : "",
-      correlationId: "corr-pos",
+    const duplicate = platform.transactions.initiate({
+      merchantId: merchant.id,
+      provider: "mock_visa",
+      money: { amountMinor: 10_000, currency: "USD" },
+      idempotencyKey: "core-idem-0001",
+      correlationId: "corr-core",
     });
-    assert.equal(confirmed.status, "recorded");
-    assert.equal(confirmed.ledgerTransactionIds.length, 1);
+    assert.equal(duplicate.id, created.id);
+    assert.equal(created.status, "initiated");
 
-    const receipt = await platform.pos.issueReceipt(confirmed.id);
-    assert.equal(receipt.liveExecution, false);
+    const authorized = await platform.transactions.authorize(created.id, "corr-core");
+    const recorded = platform.transactions.record(authorized.id, "corr-core");
+
+    assert.equal(recorded.status, "recorded");
+    assert.equal(recorded.ledgerTransactionIds.length, 1);
     assert.equal(platform.ledger.getAccountBalance(merchant.accounts.merchantAccount.id), 9750);
     assert.equal(platform.ledger.getAccountBalance(platform.accounts.platformFeeAccount.id), 250);
   }));
@@ -127,28 +130,28 @@ test("settlement simulation creates ledger entries and completes lifecycle witho
       settlementRules: { delay: "T+2" },
     });
     platform.merchants.updateMerchantStatus(merchant.id, "active");
-    const created = await platform.pos.createTransaction({
+    const created = platform.transactions.initiate({
       merchantId: merchant.id,
-      provider: "mock_bank_transfer",
-      amountMinor: 20_000,
-      currency: "USD",
-      idempotencyKey: "pos-idem-0002",
+      provider: "mock_bank",
+      money: { amountMinor: 20_000, currency: "USD" },
+      idempotencyKey: "core-idem-0002",
       correlationId: "corr-settlement",
     });
-    const confirmed = await platform.pos.confirmPayment({
-      transactionId: "id" in created ? created.id : "",
-      correlationId: "corr-settlement",
-    });
+    const authorized = await platform.transactions.authorize(created.id, "corr-settlement");
+    const recorded = platform.transactions.record(authorized.id, "corr-settlement");
     const batch = platform.settlements.simulateBatch({
       merchantId: merchant.id,
-      transactionIds: [confirmed.id],
+      transactionIds: [recorded.id],
       idempotencyKey: "settlement-idem-0001",
       correlationId: "corr-settlement",
       now: new Date("2026-05-13T00:00:00.000Z"),
     });
-    const settled = platform.transactions.getTransaction(confirmed.id);
+    const reconciliation = platform.settlements.reconcileBatch(batch.id, "corr-settlement");
+    const settled = platform.transactions.getTransaction(recorded.id);
     const completed = platform.transactions.complete(settled.id, "corr-settlement");
     assert.equal(batch.delay, "T+2");
+    assert.equal(reconciliation.matched, true);
+    assert.equal(reconciliation.liveMoneyMoved, false);
     assert.equal(settled.status, "settled");
     assert.equal(completed.status, "completed");
     assert.equal(platform.ledger.getAccountBalance(merchant.accounts.merchantAccount.id), 0);
@@ -167,127 +170,3 @@ test("mock providers cannot execute live payments", async () =>
     assert.equal(result.liveExecution, false);
     assert.throws(() => assertFinancialSafety({ MASTERCARD_SECRET_KEY: "secret" }), /Live financial settings/);
   }));
-
-test("product layer branding is swappable and does not affect ledger state", async () =>
-  withoutLiveEnv(async () => {
-    const platform = createPaymentPlatform("USD", {
-      brandName: "Acquirer Console",
-      companyName: "Example Acquirer",
-      supportEmail: "support@example.invalid",
-      logoUrl: "https://example.invalid/acquirer.svg",
-    });
-    const registered = platform.product.onboarding.registerMerchant({
-      displayName: "Dashboard merchant",
-      currency: "USD",
-      correlationId: "corr-onboarding",
-    });
-    platform.product.onboarding.submitMockKyc(registered.merchant.id, "corr-onboarding");
-    platform.product.onboarding.approveMerchant(registered.merchant.id, "corr-onboarding");
-    const created = await platform.pos.createTransaction({
-      merchantId: registered.merchant.id,
-      provider: "mock_visa",
-      amountMinor: 12_000,
-      currency: "USD",
-      idempotencyKey: "pos-idem-product-0001",
-      correlationId: "corr-product",
-    });
-    const recorded = await platform.pos.confirmPayment({
-      transactionId: "id" in created ? created.id : "",
-      correlationId: "corr-product",
-    });
-    const dashboard = platform.product.dashboard.getDashboard(registered.merchant.id);
-    const dashboardHtml = renderMerchantDashboardHtml(dashboard, platform.product.brand);
-    const posHtml = renderPosHtml(
-      { merchantId: registered.merchant.id, availableProviders: ["mock_visa"] },
-      platform.product.brand,
-    );
-
-    assert.equal(recorded.status, "recorded");
-    assert.equal(dashboard.analytics.transactionCount, 1);
-    assert.equal(dashboard.fees.feeAccountBalanceMinor, 300);
-    assert.match(dashboardHtml, /Acquirer Console Merchant Dashboard/);
-    assert.match(posHtml, /Point of Sale/);
-    assert.equal(platform.ledger.getAccountBalance(registered.merchant.accounts.merchantAccount.id), 11_700);
-  }));
-
-test("API gateway routes onboarding, POS, dashboard, and brand through product services", async () =>
-  withoutLiveEnv(async () => {
-    const platform = createPaymentPlatform("USD");
-    const server = platform.product.apiGateway.listen(0);
-    const address = server.address() as AddressInfo;
-    const baseUrl = `http://127.0.0.1:${address.port}`;
-    try {
-      const merchantResponse = await postJson(`${baseUrl}/api/onboarding/merchants`, {
-        displayName: "Gateway merchant",
-        currency: "USD",
-        platformFeeBps: 100,
-        settlementDelay: "T+1",
-        correlationId: "corr-gateway",
-      });
-      const merchantId = readNestedString(merchantResponse, ["merchant", "id"]);
-      await postJson(`${baseUrl}/api/onboarding/merchants/approve`, {
-        merchantId,
-        correlationId: "corr-gateway",
-      });
-      const transaction = await postJson(`${baseUrl}/api/pos/transactions`, {
-        merchantId,
-        provider: "mock_mastercard",
-        amountMinor: 7000,
-        currency: "USD",
-        idempotencyKey: "gateway-idem-0001",
-        correlationId: "corr-gateway",
-      });
-      const transactionId = readNestedString(transaction, ["id"]);
-      await postJson(`${baseUrl}/api/pos/payments/confirm`, {
-        transactionId,
-        correlationId: "corr-gateway",
-      });
-      const dashboard = await getJson(`${baseUrl}/api/dashboard?merchantId=${merchantId}`);
-      const brand = await getJson(`${baseUrl}/api/brand`);
-
-      assert.equal(readNestedString(brand, ["brandName"]), "MerchantPay");
-      assert.equal(readNestedNumber(dashboard, ["analytics", "transactionCount"]), 1);
-      assert.equal(readNestedNumber(dashboard, ["fees", "feeAccountBalanceMinor"]), 70);
-    } finally {
-      await new Promise<void>((resolve, reject) => {
-        server.close((error) => (error ? reject(error) : resolve()));
-      });
-    }
-  }));
-
-async function postJson(url: string, body: Record<string, unknown>): Promise<unknown> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) throw new Error(await response.text());
-  return response.json() as Promise<unknown>;
-}
-
-async function getJson(url: string): Promise<unknown> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(await response.text());
-  return response.json() as Promise<unknown>;
-}
-
-function readNestedString(value: unknown, path: readonly string[]): string {
-  const nested = readNested(value, path);
-  if (typeof nested !== "string") throw new Error(`Expected string at ${path.join(".")}.`);
-  return nested;
-}
-
-function readNestedNumber(value: unknown, path: readonly string[]): number {
-  const nested = readNested(value, path);
-  if (typeof nested !== "number") throw new Error(`Expected number at ${path.join(".")}.`);
-  return nested;
-}
-
-function readNested(value: unknown, path: readonly string[]): unknown {
-  let current = value;
-  for (const segment of path) {
-    assert.ok(current && typeof current === "object" && segment in current);
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
-}

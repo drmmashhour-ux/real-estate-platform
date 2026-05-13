@@ -6,8 +6,6 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
     "test": "node --import tsx --test src/__tests__/*.test.ts",
     "lint": "eslint src --ext .ts"
   },

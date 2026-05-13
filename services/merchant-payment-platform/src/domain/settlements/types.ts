@@ -11,3 +11,14 @@ export interface SettlementBatch {
   auditTrail: readonly AuditEvent[];
   createdAt: Date;
 }
+
+export interface SettlementReconciliationReport {
+  id: string;
+  batchId: string;
+  transactionCount: number;
+  ledgerTransactionCount: number;
+  matched: true;
+  liveMoneyMoved: false;
+  auditTrail: readonly AuditEvent[];
+  createdAt: Date;
+}

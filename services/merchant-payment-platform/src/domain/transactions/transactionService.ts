@@ -3,6 +3,7 @@ import { LedgerEngine } from "../ledger/ledgerEngine.js";
 import type { LedgerAccount } from "../ledger/types.js";
 import type { MerchantService } from "../merchants/merchantService.js";
 import { getPaymentProvider } from "../providers/providerRegistry.js";
+import { calculatePlatformFee } from "../settlements/feeCalculator.js";
 import { assertPositiveMoney, createAuditEvent, type Money, type PaymentProviderId } from "../shared/types.js";
 import type { PaymentTransaction } from "./types.js";
 
@@ -40,7 +41,7 @@ export class TransactionService {
       auditTrail: Object.freeze([
         createAuditEvent({
           action: "transaction.initiated",
-          actor: "pos",
+          actor: "transaction",
           correlationId: input.correlationId,
           metadata: { merchantId: input.merchantId, provider: input.provider },
         }),
@@ -89,9 +90,10 @@ export class TransactionService {
     if (transaction.status !== "authorized") throw new Error("Transaction must be authorized before recording.");
 
     const merchant = this.merchantService.getMerchant(transaction.merchantId);
-    const feeMinor = Math.floor((transaction.money.amountMinor * merchant.feeConfiguration.platformFeeBps) / 10_000);
-    const merchantNetMinor = transaction.money.amountMinor - feeMinor;
-    if (merchantNetMinor <= 0) throw new Error("Merchant net amount must be positive.");
+    const feeBreakdown = calculatePlatformFee({
+      gross: transaction.money,
+      platformFeeBps: merchant.feeConfiguration.platformFeeBps,
+    });
     const postings = [
       {
         accountId: this.settlementAccount.id,
@@ -103,15 +105,15 @@ export class TransactionService {
         accountId: merchant.accounts.merchantAccount.id,
         accountType: "merchant_account" as const,
         direction: "credit" as const,
-        money: { amountMinor: merchantNetMinor, currency: transaction.money.currency },
+        money: feeBreakdown.merchantNet,
       },
-      ...(feeMinor > 0
+      ...(feeBreakdown.platformFee.amountMinor > 0
         ? [
             {
               accountId: this.platformFeeAccount.id,
               accountType: "platform_fee_account" as const,
               direction: "credit" as const,
-              money: { amountMinor: feeMinor, currency: transaction.money.currency },
+              money: feeBreakdown.platformFee,
             },
           ]
         : []),
@@ -125,7 +127,11 @@ export class TransactionService {
         action: "ledger.transaction.recorded",
         actor: "ledger",
         correlationId,
-        metadata: { transactionId: transaction.id, feeMinor, merchantNetMinor },
+        metadata: {
+          transactionId: transaction.id,
+          feeMinor: feeBreakdown.platformFee.amountMinor,
+          merchantNetMinor: feeBreakdown.merchantNet.amountMinor,
+        },
       }),
     });
 

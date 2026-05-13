@@ -1,16 +1,15 @@
-# Merchant Payment Platform
+# Merchant Payment Financial Core
 
-Brand-agnostic, mock-only merchant payment infrastructure for POS, payment authorization, double-entry ledgering, settlement simulation, receipts, merchant onboarding, dashboard read models, and configurable branding.
+Brand-agnostic, mock-only foundation layer for merchant payment accounting. This package contains no product UI, no API gateway, and no live provider integrations.
 
 ## Safety posture
 
-- No real payment execution is possible by default.
+- No real payment execution or money movement.
 - `PAYMENT_PLATFORM_MODE` must be unset or `mock`.
 - Live provider credentials and live execution flags are rejected at initialization and provider execution time.
-- Providers are mock-only: `MockVisaProvider`, `MockMastercardProvider`, `MockBankTransferProvider`.
-- Financial state is ledger-derived only. No direct balance mutation API exists.
-- All payment flows go through immutable balanced ledger transactions before receipts or settlement.
-- Product UI modules are read-model/rendering layers and never mutate balances directly.
+- Providers are mock-only: `MockVisaProvider`, `MockMastercardProvider`, `MockBankProvider`.
+- Financial state is ledger-derived only. No wallet balance mutation API exists.
+- All recorded and settled financial operations are immutable double-entry ledger transactions.
 
 ## Folder structure
 
@@ -20,9 +19,7 @@ services/merchant-payment-platform
 ├── package.json
 ├── tsconfig.json
 └── src
-    ├── app.ts
     ├── index.ts
-    ├── server.ts
     ├── __tests__/platform.test.ts
     ├── domain
     │   ├── ledger
@@ -32,16 +29,12 @@ services/merchant-payment-platform
     │   ├── merchants
     │   │   ├── merchantService.ts
     │   │   └── types.ts
-    │   ├── pos
-    │   │   ├── offlineQueue.ts
-    │   │   ├── posHttpApi.ts
-    │   │   ├── posService.ts
-    │   │   └── receipt.ts
     │   ├── providers
     │   │   ├── mockProviders.ts
     │   │   ├── paymentProvider.ts
     │   │   └── providerRegistry.ts
     │   ├── settlements
+    │   │   ├── feeCalculator.ts
     │   │   ├── settlementEngine.ts
     │   │   └── types.ts
     │   ├── shared/types.ts
@@ -49,15 +42,6 @@ services/merchant-payment-platform
     │       ├── transactionService.ts
     │       └── types.ts
     ├── infrastructure/createPaymentPlatform.ts
-    ├── product
-    │   ├── api-gateway/apiGateway.ts
-    │   ├── brand/brandConfig.ts
-    │   ├── createProductLayer.ts
-    │   ├── dashboard
-    │   │   ├── dashboardService.ts
-    │   │   └── dashboardUi.ts
-    │   ├── onboarding/onboardingService.ts
-    │   └── pos-ui/posUi.ts
     └── safety/financialSafetyGuard.ts
 ```
 
@@ -77,47 +61,23 @@ Every ledger transaction must contain at least two postings, use one currency, a
 initiated -> authorized -> recorded -> settled -> completed
 ```
 
-- `initiated`: created by POS with an idempotency key.
+- `initiated`: transaction shell with merchant, provider, amount, and idempotency key.
 - `authorized`: mock provider authorization only.
 - `recorded`: balanced ledger transaction created; platform fee is deducted through ledger postings.
 - `settled`: T+1/T+2 settlement simulation records another balanced ledger transaction.
 - `completed`: final lifecycle marker after settlement.
 
-## Product and brand layer
+## Merchant core
 
-Branding lives in `product/brand/brandConfig.ts` and includes company name, support email, logo placeholder, currency display settings, theme, colors, typography, and spacing tokens. The brand config is injected into product renderers and cannot affect ledger, transaction, provider, or settlement logic.
+Merchants have a status of `pending`, `active`, or `suspended`, plus per-merchant fee configuration and settlement rules.
 
-Merchant dashboard read models come from the financial core:
+## Provider abstraction
 
-- Transactions: from `TransactionService.listTransactions()`.
-- Settlements: from `SettlementEngine.listBatches()`.
-- Fees and balances: from `LedgerEngine.getAccountBalance()`.
-- Daily/weekly analytics: computed from transaction read models, not wallet mutation.
+The `PaymentProvider` interface is ready for future bank/card adapter review, but production adapters are intentionally absent. Visa, Mastercard, and bank payment paths are represented only by mock providers. Any attempt to enable live credentials is rejected by `assertFinancialSafety`.
 
-The POS UI is an HTML renderer that posts to the API gateway and does not compute balances or fees.
+## Settlement and reconciliation
 
-## API gateway and POS MVP API
-
-The Node HTTP API exposes:
-
-- `GET /api/brand`
-- `GET /api/dashboard?merchantId=...`
-- `GET /api/integrations/health`
-- `POST /api/onboarding/merchants`
-- `POST /api/onboarding/kyc/submit`
-- `POST /api/onboarding/merchants/approve`
-- `POST /api/onboarding/merchants/reject`
-- `POST /api/pos/transactions`
-- `POST /api/pos/payments/confirm`
-- `POST /api/pos/receipts`
-- `GET /ui/dashboard?merchantId=...`
-- `GET /ui/pos?merchantId=...`
-
-Offline mode is supported by passing `offline: true` to transaction creation; the request is queued rather than processed.
-
-## Bank/provider readiness
-
-The `PaymentProvider` interface is ready for future bank/card adapter review, but production adapters are intentionally absent. Visa, Mastercard, and bank transfer are represented only by mock providers. Any attempt to enable live credentials is rejected by `assertFinancialSafety`.
+Settlement batches simulate T+1/T+2 processing, generate ledger-backed settlement postings, and can produce mocked reconciliation reports with `liveMoneyMoved: false`.
 
 ## Commands
 

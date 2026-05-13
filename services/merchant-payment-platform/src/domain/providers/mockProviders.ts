@@ -39,6 +39,6 @@ export class MockMastercardProvider extends BaseMockProvider {
   readonly id = "mock_mastercard" as const;
 }
 
-export class MockBankTransferProvider extends BaseMockProvider {
-  readonly id = "mock_bank_transfer" as const;
+export class MockBankProvider extends BaseMockProvider {
+  readonly id = "mock_bank" as const;
 }

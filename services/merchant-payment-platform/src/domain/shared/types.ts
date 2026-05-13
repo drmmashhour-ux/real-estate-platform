@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 export type AccountType = "merchant_account" | "platform_fee_account" | "settlement_account";
 export type LedgerDirection = "debit" | "credit";
 export type TransactionStatus = "initiated" | "authorized" | "recorded" | "settled" | "completed";
-export type MerchantStatus = "pending" | "active" | "suspended" | "rejected";
-export type PaymentProviderId = "mock_visa" | "mock_mastercard" | "mock_bank_transfer";
+export type MerchantStatus = "pending" | "active" | "suspended";
+export type PaymentProviderId = "mock_visa" | "mock_mastercard" | "mock_bank";
 export type SettlementDelay = "T+1" | "T+2";
 
 export interface Money {
