@@ -10,7 +10,6 @@ import FloatingContact from "@/components/ui/FloatingContact";
 import { BrowserHistoryNav } from "@/components/ui/BrowserHistoryNav";
 import { ImmoChatWidgetLazy } from "@/components/immo/ImmoChatWidgetLazy";
 import { AppProviders } from "@/app/providers";
-import { SkipLinks } from "@/components/accessibility/SkipLinks";
 import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
 import { TestModeBanner } from "@/components/layout/TestModeBanner";
 import { DebugPanel } from "@/components/DebugPanel";
