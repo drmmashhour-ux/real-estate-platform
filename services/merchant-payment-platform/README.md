@@ -44,12 +44,26 @@ services/merchant-payment-platform
     │       └── types.ts
     ├── infrastructure/createPaymentPlatform.ts
     ├── product
+    │   ├── api-gateway/productApiGateway.ts
+    │   ├── audit/auditLogger.ts
+    │   ├── auth
+    │   │   ├── authService.ts
+    │   │   ├── authTypes.ts
+    │   │   └── mockJwt.ts
     │   ├── brand/brandConfig.ts
+    │   ├── createProductizedPlatform.ts
     │   ├── dashboard
     │   │   ├── dashboardScaffold.ts
     │   │   └── viewModels.ts
     │   ├── design-system/tokens.ts
+    │   ├── persistence/persistencePorts.ts
     │   ├── pos/posScaffold.ts
+    │   ├── pos-integration/posApiClient.ts
+    │   ├── services
+    │   │   ├── dashboardProductService.ts
+    │   │   ├── merchantProductService.ts
+    │   │   ├── settlementProductService.ts
+    │   │   └── transactionProductService.ts
     │   └── ui
     │       ├── html.ts
     │       └── layout/dashboardShell.ts
@@ -102,6 +116,19 @@ The product layer is fully decoupled from financial core logic. It includes:
 - `pos/posScaffold.ts` — mock product list, checkout screen, and digital receipt scaffold.
 
 This layer does not import the ledger engine, transaction service, settlement engine, provider registry, or safety guard. It accepts read models and renders HTML scaffolds only.
+
+## Productization backend layer
+
+The productization backend keeps the boundary `UI/POS -> API Gateway -> Product Services -> Financial Core`:
+
+- `api-gateway/productApiGateway.ts` — unified typed gateway for `/transactions`, `/merchants`, `/settlements`, `/pos`, and `/dashboard`.
+- `auth/*` — mock-safe JWT-like sessions and role-based access control for `admin` and `merchant`.
+- `services/*ProductService.ts` — service facades that call financial core services. The gateway never calls the core directly.
+- `persistence/persistencePorts.ts` — persistence port plus in-memory adapter for product records.
+- `pos-integration/posApiClient.ts` — POS integration client that talks only to the API gateway.
+- `audit/auditLogger.ts` — in-memory audit logger with correlation IDs.
+
+The PostgreSQL persistence design lives in `prisma/schema.prisma`; it stores product users, sessions, merchant records, transaction metadata, settlement batches, and product audit logs. The financial ledger remains isolated in the core package.
 
 ## Commands
 
